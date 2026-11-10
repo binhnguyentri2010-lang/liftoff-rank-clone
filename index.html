@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Liftoff — Ranked Gym Workouts &amp; Strength Bodyrank</title>
+  <meta name="description" content="Log gym sets, calculate Epley 1RM scaled by bodyweight, and rank every lift &amp; muscle group across 9 tiers from Wood to Olympian.">
+  <meta name="theme-color" content="#0D0E1B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Liftoff">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" type="image/svg+xml" href="./assets/icon.svg">
+  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.png">
+  <link rel="stylesheet" href="./src/styles/tokens.css">
+  <link rel="stylesheet" href="./src/styles/app.css">
+</head>
+<body>
+  <div class="app-shell" id="liftoff-app">
+    <h1 class="sr-only">Liftoff — Ranked Gym Workouts</h1>
+
+    <header id="app-header" class="top-status-bar"></header>
+
+    <div id="app-view-host"></div>
+
+    <nav id="bottom-dock" class="bottom-dock" aria-label="Primary Navigation"></nav>
+  </div>
+
+  <div id="picker-modal" class="modal-backdrop" hidden></div>
+  <div id="celebration-modal" class="modal-backdrop" hidden></div>
+  <div id="toast-container" style="position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:80;max-width:92vw;" hidden></div>
+
+  <script src="./src/data/exercises.js"></script>
+  <script src="./src/core/rankEngine.js"></script>
+  <script src="./src/core/storage.js"></script>
+  <script src="./src/core/i18n.js"></script>
+  <script src="./src/ui/rankBadges.js"></script>
+  <script src="./src/ui/bodygraphSvg.js"></script>
+  <script src="./src/ui/soundFx.js"></script>
+  <script src="./src/app.js"></script>
+</body>
+</html>

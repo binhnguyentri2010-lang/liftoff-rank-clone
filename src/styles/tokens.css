@@ -1,0 +1,44 @@
+:root {
+  /* Core Liftoff Midnight Surfaces */
+  --bg-outer: #06070F;
+  --bg-app: #0D0E1B;
+  --bg-elevated: #15182B;
+  --bg-card: #181C32;
+  --bg-card-hover: #1E233D;
+  --bg-input: #0F1222;
+  --bg-nav: #0F1120;
+  --bg-nav-active: #1C2642;
+
+  /* Borders & Hairlines */
+  --border-subtle: #232846;
+  --border-strong: #333B63;
+  --border-hero-glow: #58C7FF;
+
+  /* Text Hierarchy (APCA-calibrated on dark #0D0E1B - #181C32) */
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+
+  /* Brand & Action Accents */
+  --accent-blue: #3898FF;
+  --accent-blue-strong: #1D6FE8;
+  --accent-quest-bg: #175B35;
+  --accent-quest-btn: #15803D;
+  --accent-blue-card: #15457A;
+  --accent-crimson-start: #751822;
+  --accent-crimson-end: #931F2D;
+  --accent-crimson-border: #AD2E3D;
+  --accent-success: #16A34A;
+  --accent-warn: #F59E0B;
+  --accent-danger: #E11D48;
+
+  /* Radii & Spacing (Concentric R_out = R_in + P) */
+  --radius-xl: 20px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
+
+  --dock-height: 66px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}

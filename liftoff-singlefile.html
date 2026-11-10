@@ -1,0 +1,4934 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Liftoff — Ranked Gym Workouts &amp; Strength Bodyrank</title>
+  <meta name="description" content="Log gym sets, calculate Epley 1RM scaled by bodyweight, and rank every lift &amp; muscle group across 9 tiers from Wood to Olympian.">
+  <meta name="theme-color" content="#0D0E1B">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Liftoff">
+  <style>
+:root {
+  /* Core Liftoff Midnight Surfaces */
+  --bg-outer: #06070F;
+  --bg-app: #0D0E1B;
+  --bg-elevated: #15182B;
+  --bg-card: #181C32;
+  --bg-card-hover: #1E233D;
+  --bg-input: #0F1222;
+  --bg-nav: #0F1120;
+  --bg-nav-active: #1C2642;
+
+  /* Borders & Hairlines */
+  --border-subtle: #232846;
+  --border-strong: #333B63;
+  --border-hero-glow: #58C7FF;
+
+  /* Text Hierarchy (APCA-calibrated on dark #0D0E1B - #181C32) */
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+
+  /* Brand & Action Accents */
+  --accent-blue: #3898FF;
+  --accent-blue-strong: #1D6FE8;
+  --accent-quest-bg: #175B35;
+  --accent-quest-btn: #15803D;
+  --accent-blue-card: #15457A;
+  --accent-crimson-start: #751822;
+  --accent-crimson-end: #931F2D;
+  --accent-crimson-border: #AD2E3D;
+  --accent-success: #16A34A;
+  --accent-warn: #F59E0B;
+  --accent-danger: #E11D48;
+
+  /* Radii & Spacing (Concentric R_out = R_in + P) */
+  --radius-xl: 20px;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
+  --radius-pill: 999px;
+
+  --dock-height: 66px;
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-outer);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
+}
+
+.tabular,
+input,
+select,
+.timer-pill,
+.rank-chip,
+.stat-value {
+  font-variant-numeric: tabular-nums;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  font-size: 16px;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: inherit;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+}
+
+/* Mobile-first App Frame (375x812 native feel, centered phone shell on desktop) */
+.app-shell {
+  width: 100%;
+  max-width: 430px;
+  min-height: 100dvh;
+  margin: 0 auto;
+  background-color: var(--bg-app);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding-bottom: calc(var(--dock-height) + 26px + env(safe-area-inset-bottom, 0px));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 24px 64px rgba(0, 0, 0, 0.65);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Top Status Header (Lv.1 + XP bar, Streak, Gems, VI/EN, Bell) */
+.top-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: calc(10px + env(safe-area-inset-top, 0px)) 14px 8px;
+  background: var(--bg-app);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+
+.level-cluster {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  min-height: 44px;
+  padding: 2px 4px 2px 0;
+}
+
+.avatar-wrap {
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.level-track-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.level-label {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+  text-align: left;
+}
+
+.xp-bar-outer {
+  width: 78px;
+  height: 10px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid #4DA8FF;
+  background: #0A1020;
+  padding: 1.5px;
+  display: flex;
+  align-items: center;
+}
+
+.xp-bar-inner {
+  height: 100%;
+  min-width: 6px;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, #38BDF8 0%, #818CF8 100%);
+  transition: width 220ms ease-out;
+}
+
+.header-counters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.counter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  padding: 6px 6px;
+  min-height: 44px;
+}
+
+.lang-toggle-btn,
+.icon-action-btn {
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: var(--radius-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12.5px;
+  font-weight: 800;
+  color: var(--text-primary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+}
+
+.lang-toggle-btn {
+  padding: 0 9px;
+  letter-spacing: 0.02em;
+}
+
+/* Home Sub-Tabs (For You | Friends | Discovery) */
+.subtabs-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 0 8px;
+}
+
+.subtab-btn {
+  min-height: 44px;
+  font-size: 14.5px;
+  font-weight: 700;
+  color: var(--text-muted);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.subtab-btn.is-active {
+  color: #55A6FF;
+}
+
+.subtab-btn.is-active::after {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  bottom: -1px;
+  height: 2.5px;
+  border-radius: 2px;
+  background: #4299FF;
+}
+
+/* Main View Container */
+.main-content {
+  padding: 16px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
+}
+
+/* Active Workout Floating Banner when navigating other tabs */
+.active-workout-banner {
+  background: linear-gradient(90deg, #1D4ED8 0%, #2563EB 100%);
+  border: 1px solid #60A5FA;
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.active-workout-banner-btn {
+  background: #FFFFFF;
+  color: #0F172A;
+  font-weight: 800;
+  font-size: 13.5px;
+  padding: 8px 14px;
+  min-height: 44px;
+  border-radius: var(--radius-pill);
+}
+
+/* Hero Bodyrank Card (IMG_1551.png exact layout) */
+.bodyrank-hero-card {
+  position: relative;
+  width: 100%;
+  text-align: left;
+  border-radius: var(--radius-xl);
+  padding: 16px 14px 16px 16px;
+  background: radial-gradient(120% 120% at 80% 20%, #231D47 0%, #14162B 58%, #101223 100%);
+  border: 1.6px solid var(--border-hero-glow);
+  box-shadow: 0 0 20px rgba(88, 199, 255, 0.16), inset 0 0 18px rgba(139, 92, 246, 0.14);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  min-height: 144px;
+}
+
+.bodyrank-hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.bodyrank-copy {
+  max-width: 60%;
+  z-index: 2;
+}
+
+.bodyrank-eyebrow {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 3px;
+}
+
+.bodyrank-headline {
+  font-size: 16.5px;
+  font-weight: 800;
+  line-height: 1.26;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.bodyrank-art-wrap {
+  position: absolute;
+  right: 6px;
+  top: 6px;
+  bottom: 6px;
+  width: 142px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  pointer-events: none;
+}
+
+.bodyrank-badge-float {
+  position: absolute;
+  right: 8px;
+  bottom: 4px;
+  filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.55));
+}
+
+.bodyrank-progress-track {
+  position: relative;
+  z-index: 2;
+  width: calc(100% - 58px);
+  height: 14px;
+  background: #2A2D45;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.bodyrank-progress-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, #5CE1E6 0%, #8474FF 52%, #B55CFF 100%);
+  transition: width 260ms ease-out;
+}
+
+/* Section Headers */
+.section-block {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.section-heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.section-title {
+  font-size: 18.5px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: #FFFFFF;
+}
+
+/* Getting Started Horizontal Quest Carousel */
+.quest-carousel {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.quest-carousel::-webkit-scrollbar {
+  display: none;
+}
+
+.quest-card {
+  flex: 0 0 256px;
+  max-width: 82%;
+  scroll-snap-align: start;
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  min-height: 156px;
+}
+
+.quest-card.is-green {
+  background: var(--accent-quest-bg);
+  border: 1px solid rgba(74, 222, 128, 0.24);
+}
+
+.quest-card.is-blue {
+  background: var(--accent-blue-card);
+  border: 1px solid rgba(96, 165, 250, 0.26);
+}
+
+.quest-card-title {
+  font-size: 15.5px;
+  font-weight: 800;
+  margin: 0 0 5px;
+  color: #FFFFFF;
+}
+
+.quest-card-desc {
+  font-size: 13.5px;
+  line-height: 1.38;
+  color: #E2E8F0;
+  margin: 0;
+}
+
+.quest-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.quest-ring-wrap {
+  position: relative;
+  width: 46px;
+  height: 46px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.quest-cta-btn {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: var(--radius-pill);
+  font-size: 14.5px;
+  font-weight: 800;
+  color: #FFFFFF;
+  background: var(--accent-quest-btn);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+.quest-card.is-blue .quest-cta-btn {
+  background: #1D6FE8;
+}
+
+/* Rank Your Workout Crimson Card */
+.rank-workout-cta-card {
+  width: 100%;
+  min-height: 76px;
+  padding: 10px 16px 10px 12px;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--accent-crimson-start) 0%, var(--accent-crimson-end) 100%);
+  border: 1px solid var(--accent-crimson-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 8px 22px rgba(147, 31, 45, 0.28);
+}
+
+.rank-workout-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.rank-workout-label {
+  font-size: 16px;
+  font-weight: 800;
+  color: #FFFFFF;
+}
+
+.rank-workout-sub {
+  display: block;
+  font-size: 12.5px;
+  color: #FECDD3;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+.rank-workout-start {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15.5px;
+  font-weight: 800;
+  color: #FFFFFF;
+  flex-shrink: 0;
+}
+
+/* Recovery Zone Card */
+.recovery-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.recovery-item {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recovery-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.recovery-bar {
+  height: 6px;
+  background: #0D1020;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+
+.recovery-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+}
+
+/* Active Workout Logger View */
+.logger-header-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.logger-top-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.timer-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill);
+  padding: 6px 10px;
+  min-height: 44px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.timer-pill.is-resting {
+  border-color: #38BDF8;
+  background: rgba(56, 189, 248, 0.14);
+  color: #BAE6FD;
+}
+
+.post-workout-btn {
+  min-height: 44px;
+  padding: 0 13px;
+  border-radius: var(--radius-pill);
+  background: var(--accent-success);
+  color: #FFFFFF;
+  font-size: 13.5px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.bw-inline-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border-subtle);
+  flex-wrap: wrap;
+}
+
+.bw-inline-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.compact-num-input {
+  width: 74px;
+  min-height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 4px 6px;
+}
+
+.unit-switch-btn {
+  min-width: 48px;
+  min-height: 44px;
+  padding: 0 10px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #93C5FD;
+}
+
+/* Exercise Logger Card & Set Table */
+.exercise-log-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.exercise-log-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.exercise-log-title {
+  font-size: 16px;
+  font-weight: 800;
+  margin: 0;
+  color: #FFFFFF;
+}
+
+.exercise-cue {
+  font-size: 12.5px;
+  color: var(--text-muted);
+  margin: 2px 0 0;
+}
+
+.next-rank-banner {
+  background: rgba(56, 152, 255, 0.11);
+  border: 1px solid rgba(56, 152, 255, 0.30);
+  border-radius: var(--radius-sm);
+  padding: 7px 10px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.set-grid-header,
+.set-row {
+  display: grid;
+  grid-template-columns: 44px minmax(62px, 1fr) minmax(56px, 0.9fr) minmax(68px, 1fr) 44px;
+  gap: 6px;
+  align-items: center;
+}
+
+.set-grid-header {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 2px 0;
+}
+
+.set-row {
+  padding: 4px 0;
+  border-radius: var(--radius-sm);
+}
+
+.set-row.is-completed {
+  background: rgba(22, 163, 74, 0.10);
+}
+
+.set-type-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  font-size: 13.5px;
+  font-weight: 800;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.set-type-btn.is-warmup {
+  color: #FBBF24;
+  border-color: rgba(251, 191, 36, 0.4);
+}
+
+.set-type-btn.is-dropset {
+  color: #C084FC;
+  border-color: rgba(192, 132, 252, 0.4);
+}
+
+.set-input {
+  width: 100%;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-input);
+  color: #FFFFFF;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  padding: 0 4px;
+}
+
+.live-rank-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  font-size: 11.5px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.set-check-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  color: var(--text-muted);
+  font-size: 16px;
+  font-weight: 900;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.set-check-btn.is-checked {
+  background: var(--accent-success);
+  border-color: #4ADE80;
+  color: #FFFFFF;
+}
+
+.exercise-card-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.secondary-btn {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-strong);
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.danger-text-btn {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--radius-md);
+  color: #FDA4AF;
+  background: rgba(225, 29, 72, 0.12);
+  border: 1px solid rgba(225, 29, 72, 0.3);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+/* Ranks & Bodygraph View */
+.ranks-stage-card {
+  background: radial-gradient(100% 100% at 50% 15%, #1E2243 0%, #13162A 100%);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-xl);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.segmented-toggle {
+  display: inline-flex;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-pill);
+  padding: 3px;
+  gap: 4px;
+}
+
+.segmented-btn {
+  min-height: 44px;
+  padding: 0 12px;
+  border-radius: var(--radius-pill);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.segmented-btn.is-active {
+  background: var(--accent-blue-strong);
+  color: #FFFFFF;
+}
+
+.bodygraph-stage-wrap {
+  width: 100%;
+  max-width: 230px;
+  display: flex;
+  justify-content: center;
+}
+
+.bodygraph-interactive-svg {
+  width: 100%;
+  height: auto;
+  max-height: 300px;
+}
+
+.muscle-region {
+  cursor: pointer;
+  transition: opacity 150ms ease, filter 150ms ease;
+}
+
+.muscle-Detail-strip {
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.muscle-grid-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.muscle-row-card {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  min-height: 58px;
+}
+
+.muscle-row-card.is-selected {
+  border-color: var(--accent-blue);
+  background: #1C2340;
+}
+
+/* Calculator & Ladder Cards */
+.calc-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.calc-select,
+.search-input {
+  width: 100%;
+  min-height: 46px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-strong);
+  background: var(--bg-input);
+  color: #FFFFFF;
+  padding: 0 12px;
+  font-size: 16px;
+}
+
+.calc-inputs-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.tier-ladder-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.tier-ladder-cell {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 8px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+/* Bottom 6-Tab Navigation Dock (Exact IMG_1551.png match) */
+.bottom-dock {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: 0;
+  width: 100%;
+  max-width: 430px;
+  background: var(--bg-nav);
+  border-top: 1px solid var(--border-subtle);
+  padding: 4px 4px calc(4px + env(safe-area-inset-bottom, 0px));
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 2px;
+  z-index: 30;
+}
+
+.dock-tab-btn {
+  min-height: 56px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 4px 2px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.dock-tab-btn.is-active {
+  background: var(--bg-nav-active);
+  color: #FFFFFF;
+  font-weight: 700;
+}
+
+/* Modal / Drawer Overlay (<dialog> safe on Safari iOS) */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 6, 14, 0.82);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal-backdrop[hidden] {
+  display: none;
+}
+
+.modal-sheet {
+  width: 100%;
+  max-width: 430px;
+  max-height: 90dvh;
+  background: var(--bg-app);
+  border-top: 1px solid var(--border-strong);
+  border-radius: 22px 22px 0 0;
+  padding: 16px 14px calc(18px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.filter-chips-row {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  scrollbar-width: none;
+}
+
+.filter-chips-row::-webkit-scrollbar {
+  display: none;
+}
+
+.filter-chip {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.filter-chip.is-active {
+  background: var(--accent-blue-strong);
+  border-color: #60A5FA;
+  color: #FFFFFF;
+}
+
+.picker-exercise-btn {
+  width: 100%;
+  min-height: 60px;
+  padding: 10px 12px;
+  border-radius: var(--radius-md);
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+}
+
+.picker-exercise-btn.is-picked {
+  border-color: #38BDF8;
+  background: rgba(56, 189, 248, 0.12);
+}
+
+/* Celebration Rank-Up Modal */
+.celebration-hero {
+  background: radial-gradient(100% 100% at 50% 0%, #2B1F52 0%, #14172B 100%);
+  border: 1.5px solid #60A5FA;
+  border-radius: var(--radius-xl);
+  padding: 18px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.pr-tag {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(250, 204, 21, 0.18);
+  color: #FDE047;
+  border: 1px solid rgba(250, 204, 21, 0.4);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .bodyrank-hero-card:hover,
+  .rank-workout-cta-card:hover,
+  .muscle-row-card:hover,
+  .picker-exercise-btn:hover {
+    filter: brightness(1.06);
+  }
+}
+
+@media (max-width: 359px) {
+  .xp-bar-outer {
+    width: 56px;
+  }
+  .dock-tab-btn {
+    font-size: 10px;
+  }
+  .set-grid-header,
+  .set-row {
+    grid-template-columns: 40px minmax(52px, 1fr) minmax(48px, 0.9fr) minmax(58px, 1fr) 40px;
+    gap: 4px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <div class="app-shell" id="liftoff-app">
+    <h1 class="sr-only">Liftoff — Ranked Gym Workouts</h1>
+    <header id="app-header" class="top-status-bar"></header>
+    <div id="app-view-host"></div>
+    <nav id="bottom-dock" class="bottom-dock" aria-label="Primary Navigation"></nav>
+  </div>
+  <div id="picker-modal" class="modal-backdrop" hidden></div>
+  <div id="celebration-modal" class="modal-backdrop" hidden></div>
+  <div id="toast-container" style="position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:80;max-width:92vw;" hidden></div>
+  <script>
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.LiftoffExercises = factory();
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  const MUSCLE_GROUPS = [
+    { id: 'upper_chest', view: 'front', group: 'chest', nameEn: 'Upper Chest', nameVi: 'Ngực trên' },
+    { id: 'lower_chest', view: 'front', group: 'chest', nameEn: 'Mid & Lower Chest', nameVi: 'Ngực giữa & dưới' },
+    { id: 'front_delts', view: 'front', group: 'shoulders', nameEn: 'Front Delts', nameVi: 'Vai trước' },
+    { id: 'side_delts', view: 'front', group: 'shoulders', nameEn: 'Side Delts', nameVi: 'Vai ngang' },
+    { id: 'biceps', view: 'front', group: 'arms', nameEn: 'Biceps', nameVi: 'Tay trước (Biceps)' },
+    { id: 'forearms', view: 'front', group: 'arms', nameEn: 'Forearms', nameVi: 'Cẳng tay' },
+    { id: 'abs', view: 'front', group: 'core', nameEn: 'Abs & Core', nameVi: 'Cơ bụng (Core)' },
+    { id: 'quads', view: 'front', group: 'legs', nameEn: 'Quadriceps', nameVi: 'Đùi trước (Quads)' },
+    { id: 'traps', view: 'back', group: 'back', nameEn: 'Traps & Upper Back', nameVi: 'Cầu vai & Lưng trên' },
+    { id: 'lats', view: 'back', group: 'back', nameEn: 'Lats', nameVi: 'Cơ xô (Lats)' },
+    { id: 'rear_delts', view: 'back', group: 'shoulders', nameEn: 'Rear Delts', nameVi: 'Vai sau' },
+    { id: 'triceps', view: 'back', group: 'arms', nameEn: 'Triceps', nameVi: 'Tay sau (Triceps)' },
+    { id: 'glutes', view: 'back', group: 'legs', nameEn: 'Glutes', nameVi: 'Cơ mông (Glutes)' },
+    { id: 'hamstrings', view: 'back', group: 'legs', nameEn: 'Hamstrings', nameVi: 'Đùi sau' },
+    { id: 'calves', view: 'back', group: 'legs', nameEn: 'Calves', nameVi: 'Bắp chuối' }
+  ];
+
+  const CATEGORY_FILTERS = [
+    { id: 'all', nameEn: 'All', nameVi: 'Tất cả' },
+    { id: 'chest', nameEn: 'Chest', nameVi: 'Ngực' },
+    { id: 'back', nameEn: 'Back', nameVi: 'Lưng - Xô' },
+    { id: 'legs', nameEn: 'Legs', nameVi: 'Chân - Mông' },
+    { id: 'shoulders', nameEn: 'Shoulders', nameVi: 'Vai' },
+    { id: 'arms', nameEn: 'Arms', nameVi: 'Tay' },
+    { id: 'core', nameEn: 'Core', nameVi: 'Bụng' }
+  ];
+
+  // ref1RM70kgMale: Estimated 1RM (in kg) corresponding to Gold Floor (Rating 400) for a 70kg male lifter.
+  // For dumbbell exercises, weight is logged per single dumbbell (1 hand).
+  // For bodyweight exercises (isBodyweight: true), weight input represents ADDED external weight (0 kg = bodyweight only),
+  // and effective load = bodyweightKg * bwLoadFactor + addedWeightKg.
+  const EXERCISES = [
+    // CHEST
+    {
+      id: 'bench_press',
+      nameEn: 'Barbell Bench Press',
+      nameVi: 'Đẩy ngực thanh đòn (Bench Press)',
+      category: 'chest',
+      equipment: 'barbell',
+      ref1RM70kgMale: 72.5,
+      primaryMuscles: ['lower_chest', 'upper_chest'],
+      secondaryMuscles: ['triceps', 'front_delts'],
+      cueEn: 'Log total barbell + plates weight',
+      cueVi: 'Nhập tổng tạ đòn + bánh tạ hai bên'
+    },
+    {
+      id: 'incline_bench_press',
+      nameEn: 'Incline Barbell Bench Press',
+      nameVi: 'Đẩy ngực trên thanh đòn',
+      category: 'chest',
+      equipment: 'barbell',
+      ref1RM70kgMale: 60.0,
+      primaryMuscles: ['upper_chest'],
+      secondaryMuscles: ['front_delts', 'triceps'],
+      cueEn: '30-45 degree bench angle, total bar weight',
+      cueVi: 'Ghế dốc 30-45 độ, tính tổng thanh đòn + tạ'
+    },
+    {
+      id: 'incline_db_press',
+      nameEn: 'Incline Dumbbell Press',
+      nameVi: 'Đẩy ngực trên tạ đơn (1 bên)',
+      category: 'chest',
+      equipment: 'dumbbell',
+      ref1RM70kgMale: 26.0,
+      primaryMuscles: ['upper_chest'],
+      secondaryMuscles: ['lower_chest', 'front_delts', 'triceps'],
+      cueEn: 'Log weight of ONE dumbbell',
+      cueVi: 'Nhập khối lượng của 1 quả tạ đơn'
+    },
+    {
+      id: 'db_bench_press',
+      nameEn: 'Flat Dumbbell Bench Press',
+      nameVi: 'Đẩy ngực phẳng tạ đơn (1 bên)',
+      category: 'chest',
+      equipment: 'dumbbell',
+      ref1RM70kgMale: 30.0,
+      primaryMuscles: ['lower_chest'],
+      secondaryMuscles: ['upper_chest', 'triceps', 'front_delts'],
+      cueEn: 'Log weight of ONE dumbbell',
+      cueVi: 'Nhập khối lượng của 1 quả tạ đơn'
+    },
+    {
+      id: 'pec_deck_fly',
+      nameEn: 'Machine Chest Fly (Pec Deck)',
+      nameVi: 'Ép ngực máy (Pec Deck)',
+      category: 'chest',
+      equipment: 'machine',
+      ref1RM70kgMale: 58.0,
+      primaryMuscles: ['lower_chest', 'upper_chest'],
+      secondaryMuscles: ['front_delts'],
+      cueEn: 'Controlled squeeze at peak contraction',
+      cueVi: 'Ép sát có kiểm soát ở đỉnh biên độ'
+    },
+    {
+      id: 'chest_dips',
+      nameEn: 'Weighted Dips',
+      nameVi: 'Xà kép (Dips + tạ đeo thêm)',
+      category: 'chest',
+      equipment: 'bodyweight',
+      isBodyweight: true,
+      bwLoadFactor: 0.92,
+      ref1RM70kgMale: 84.0,
+      primaryMuscles: ['lower_chest', 'triceps'],
+      secondaryMuscles: ['front_delts'],
+      cueEn: 'Enter 0 kg if bodyweight only, or added belt weight',
+      cueVi: 'Nhập 0 nếu chỉ nâng người không, hoặc nhập số kg tạ đeo thêm'
+    },
+
+    // BACK
+    {
+      id: 'deadlift',
+      nameEn: 'Barbell Deadlift',
+      nameVi: 'Kéo lưng đùi thanh đòn (Deadlift)',
+      category: 'back',
+      equipment: 'barbell',
+      ref1RM70kgMale: 120.0,
+      primaryMuscles: ['hamstrings', 'glutes', 'traps'],
+      secondaryMuscles: ['lats', 'forearms'],
+      cueEn: 'Conventional or sumo total bar weight',
+      cueVi: 'Tổng khối lượng thanh đòn + bánh tạ'
+    },
+    {
+      id: 'pull_ups',
+      nameEn: 'Pull-Ups (Weighted / BW)',
+      nameVi: 'Kéo xà đơn (Pull-Up)',
+      category: 'back',
+      equipment: 'bodyweight',
+      isBodyweight: true,
+      bwLoadFactor: 0.95,
+      ref1RM70kgMale: 82.0,
+      primaryMuscles: ['lats'],
+      secondaryMuscles: ['biceps', 'traps', 'forearms'],
+      cueEn: 'Enter 0 kg for bodyweight or added belt weight',
+      cueVi: 'Nhập 0 nếu kéo người không, hoặc số kg tạ đeo thêm'
+    },
+    {
+      id: 'lat_pulldown',
+      nameEn: 'Lat Pulldown (Cable)',
+      nameVi: 'Kéo xô máy cáp (Lat Pulldown)',
+      category: 'back',
+      equipment: 'cable',
+      ref1RM70kgMale: 64.0,
+      primaryMuscles: ['lats'],
+      secondaryMuscles: ['biceps', 'rear_delts'],
+      cueEn: 'Pull bar to upper chest without excessive lean',
+      cueVi: 'Kéo thanh cầm chạm ngực trên, giữ thân ổn định'
+    },
+    {
+      id: 'barbell_row',
+      nameEn: 'Bent-Over Barbell Row',
+      nameVi: 'Gập người chèo tạ đòn (Barbell Row)',
+      category: 'back',
+      equipment: 'barbell',
+      ref1RM70kgMale: 68.0,
+      primaryMuscles: ['traps', 'lats'],
+      secondaryMuscles: ['rear_delts', 'biceps', 'forearms'],
+      cueEn: 'Log total barbell + plates weight',
+      cueVi: 'Nhập tổng khối lượng thanh đòn + tạ'
+    },
+    {
+      id: 'seated_cable_row',
+      nameEn: 'Seated Cable Row',
+      nameVi: 'Ngồi kéo cáp lưng giữa',
+      category: 'back',
+      equipment: 'cable',
+      ref1RM70kgMale: 66.0,
+      primaryMuscles: ['traps', 'lats'],
+      secondaryMuscles: ['biceps', 'rear_delts'],
+      cueEn: 'Drive elbows back and squeeze shoulder blades',
+      cueVi: 'Kéo khuỷu tay ra sau, ép chặt bả vai'
+    },
+    {
+      id: 'db_shrug',
+      nameEn: 'Dumbbell Shrugs',
+      nameVi: 'Nhún cầu vai tạ đơn (1 bên)',
+      category: 'back',
+      equipment: 'dumbbell',
+      ref1RM70kgMale: 34.0,
+      primaryMuscles: ['traps'],
+      secondaryMuscles: ['forearms'],
+      cueEn: 'Log weight of ONE dumbbell',
+      cueVi: 'Nhập khối lượng của 1 quả tạ đơn'
+    },
+
+    // LEGS
+    {
+      id: 'barbell_squat',
+      nameEn: 'Barbell Back Squat',
+      nameVi: 'Gánh tạ đòn (Back Squat)',
+      category: 'legs',
+      equipment: 'barbell',
+      ref1RM70kgMale: 97.5,
+      primaryMuscles: ['quads', 'glutes'],
+      secondaryMuscles: ['hamstrings', 'abs'],
+      cueEn: 'Hip crease to parallel or below, total bar weight',
+      cueVi: 'Xuống đùi song song sàn, nhập tổng tạ + đòn'
+    },
+    {
+      id: 'leg_press',
+      nameEn: '45° Leg Press',
+      nameVi: 'Đạp đùi máy nghiêng (Leg Press)',
+      category: 'legs',
+      equipment: 'machine',
+      ref1RM70kgMale: 185.0,
+      primaryMuscles: ['quads'],
+      secondaryMuscles: ['glutes', 'hamstrings'],
+      cueEn: 'Log total plates loaded on sled',
+      cueVi: 'Nhập tổng số kg bánh tạ lắp trên bàn đạp'
+    },
+    {
+      id: 'romanian_deadlift',
+      nameEn: 'Romanian Deadlift (RDL)',
+      nameVi: 'Deadlift đùi sau (RDL thanh đòn)',
+      category: 'legs',
+      equipment: 'barbell',
+      ref1RM70kgMale: 92.5,
+      primaryMuscles: ['hamstrings', 'glutes'],
+      secondaryMuscles: ['traps', 'forearms'],
+      cueEn: 'Hinge hips back keeping shins vertical',
+      cueVi: 'Đẩy hông ra sau, cảm nhận căng đùi sau'
+    },
+    {
+      id: 'hip_thrust',
+      nameEn: 'Barbell Hip Thrust',
+      nameVi: 'Đẩy hông thanh đòn (Hip Thrust)',
+      category: 'legs',
+      equipment: 'barbell',
+      ref1RM70kgMale: 115.0,
+      primaryMuscles: ['glutes'],
+      secondaryMuscles: ['hamstrings'],
+      cueEn: 'Full hip lockout at top, total bar weight',
+      cueVi: 'Siết mông khóa hông ở đỉnh, nhập tổng tạ'
+    },
+    {
+      id: 'leg_extension',
+      nameEn: 'Seated Leg Extension',
+      nameVi: 'Đá đùi trước máy (Leg Extension)',
+      category: 'legs',
+      equipment: 'machine',
+      ref1RM70kgMale: 62.0,
+      primaryMuscles: ['quads'],
+      secondaryMuscles: [],
+      cueEn: 'Pause briefly at full knee extension',
+      cueVi: 'Giữ nửa giây ở đỉnh khi duỗi thẳng gối'
+    },
+    {
+      id: 'lying_leg_curl',
+      nameEn: 'Seated / Lying Leg Curl',
+      nameVi: 'Cuốn đùi sau máy (Leg Curl)',
+      category: 'legs',
+      equipment: 'machine',
+      ref1RM70kgMale: 52.0,
+      primaryMuscles: ['hamstrings'],
+      secondaryMuscles: ['calves'],
+      cueEn: 'Control eccentric phase without lifting hips',
+      cueVi: 'Hạ tạ chậm, giữ hông áp sát đệm'
+    },
+    {
+      id: 'bulgarian_split_squat',
+      nameEn: 'Bulgarian Split Squat (DB)',
+      nameVi: 'Chùng chân sau ghế tạ đơn (1 bên)',
+      category: 'legs',
+      equipment: 'dumbbell',
+      ref1RM70kgMale: 22.0,
+      primaryMuscles: ['quads', 'glutes'],
+      secondaryMuscles: ['hamstrings'],
+      cueEn: 'Log weight of ONE dumbbell',
+      cueVi: 'Nhập khối lượng 1 quả tạ đơn cầm tay'
+    },
+    {
+      id: 'standing_calf_raise',
+      nameEn: 'Standing Calf Raise',
+      nameVi: 'Nhón bắp chuối máy đứng',
+      category: 'legs',
+      equipment: 'machine',
+      ref1RM70kgMale: 95.0,
+      primaryMuscles: ['calves'],
+      secondaryMuscles: [],
+      cueEn: 'Full stretch at bottom, pause at top',
+      cueVi: 'Hạ sâu hết biên độ gót chân rồi nhón cao'
+    },
+    {
+      id: 'seated_calf_raise',
+      nameEn: 'Seated Calf Raise',
+      nameVi: 'Nhón bắp chuối máy ngồi',
+      category: 'legs',
+      equipment: 'machine',
+      ref1RM70kgMale: 60.0,
+      primaryMuscles: ['calves'],
+      secondaryMuscles: [],
+      cueEn: 'Targets soleus muscle with bent knees',
+      cueVi: 'Tập trung cơ dép bắp chân dưới'
+    },
+
+    // SHOULDERS
+    {
+      id: 'overhead_press',
+      nameEn: 'Barbell Overhead Press (OHP)',
+      nameVi: 'Đẩy vai đứng thanh đòn (OHP)',
+      category: 'shoulders',
+      equipment: 'barbell',
+      ref1RM70kgMale: 47.5,
+      primaryMuscles: ['front_delts', 'side_delts'],
+      secondaryMuscles: ['triceps', 'upper_chest'],
+      cueEn: 'Strict standing press without leg drive',
+      cueVi: 'Đứng đẩy nghiêm không nhún chân lấy đà'
+    },
+    {
+      id: 'db_shoulder_press',
+      nameEn: 'Seated Dumbbell Shoulder Press',
+      nameVi: 'Ngồi đẩy vai tạ đơn (1 bên)',
+      category: 'shoulders',
+      equipment: 'dumbbell',
+      ref1RM70kgMale: 22.0,
+      primaryMuscles: ['front_delts', 'side_delts'],
+      secondaryMuscles: ['triceps'],
+      cueEn: 'Log weight of ONE dumbbell',
+      cueVi: 'Nhập khối lượng của 1 quả tạ đơn'
+    },
+    {
+      id: 'arnold_press',
+      nameEn: 'Arnold Dumbbell Press',
+      nameVi: 'Đẩy vai xoay cổ tay (Arnold Press)',
+      category: 'shoulders',
+      equipment: 'dumbbell',
+      ref1RM70kgMale: 19.5,
+      primaryMuscles: ['front_delts'],
+      secondaryMuscles: ['side_delts', 'rear_delts', 'triceps'],
+      cueEn: 'Log weight of ONE dumbbell',
+      cueVi: 'Nhập khối lượng của 1 quả tạ đơn'
+    },
+    {
+      id: 'db_lateral_raise',
+      nameEn: 'Dumbbell Lateral Raise',
+      nameVi: 'Dang vai ngang tạ đơn (1 bên)',
+      category: 'shoulders',
+      equipment: 'dumbbell',
+      ref1RM70kgMale: 12.0,
+      primaryMuscles: ['side_delts'],
+      secondaryMuscles: ['traps'],
+      cueEn: 'Lead with elbows, log ONE dumbbell weight',
+      cueVi: 'Nâng ngang bằng khuỷu tay, nhập 1 quả tạ đơn'
+    },
+    {
+      id: 'cable_lateral_raise',
+      nameEn: 'Single-Arm Cable Lateral Raise',
+      nameVi: 'Kéo cáp vai ngang 1 tay',
+      category: 'shoulders',
+      equipment: 'cable',
+      ref1RM70kgMale: 11.0,
+      primaryMuscles: ['side_delts'],
+      secondaryMuscles: [],
+      cueEn: 'Constant cable tension across body',
+      cueVi: 'Giữ lực căng dây cáp liên tục'
+    },
+    {
+      id: 'face_pull',
+      nameEn: 'Rope Face Pull',
+      nameVi: 'Kéo dây thừng vai sau (Face Pull)',
+      category: 'shoulders',
+      equipment: 'cable',
+      ref1RM70kgMale: 32.0,
+      primaryMuscles: ['rear_delts'],
+      secondaryMuscles: ['traps'],
+      cueEn: 'Pull rope toward forehead with external rotation',
+      cueVi: 'Kéo dây về phía trán, mở rộng hai cẳng tay'
+    },
+    {
+      id: 'reverse_pec_deck',
+      nameEn: 'Reverse Pec Deck (Rear Delt Fly)',
+      nameVi: 'Bay vai sau máy (Reverse Fly)',
+      category: 'shoulders',
+      equipment: 'machine',
+      ref1RM70kgMale: 46.0,
+      primaryMuscles: ['rear_delts'],
+      secondaryMuscles: ['traps'],
+      cueEn: 'Sweep arms wide targeting posterior delts',
+      cueVi: 'Mở rộng cánh tay tập trung cơ vai sau'
+    },
+
+    // ARMS
+    {
+      id: 'barbell_curl',
+      nameEn: 'Barbell / EZ-Bar Bicep Curl',
+      nameVi: 'Cuốn tay trước thanh đòn / đòn EZ',
+      category: 'arms',
+      equipment: 'barbell',
+      ref1RM70kgMale: 36.0,
+      primaryMuscles: ['biceps'],
+      secondaryMuscles: ['forearms'],
+      cueEn: 'Keep elbows pinned at sides, total bar weight',
+      cueVi: 'Giữ khuỷu tay cố định sát sườn, nhập tổng tạ'
+    },
+    {
+      id: 'incline_db_curl',
+      nameEn: 'Incline Dumbbell Curl',
+      nameVi: 'Cuốn tay trước ghế dốc (1 bên)',
+      category: 'arms',
+      equipment: 'dumbbell',
+      ref1RM70kgMale: 15.0,
+      primaryMuscles: ['biceps'],
+      secondaryMuscles: ['forearms'],
+      cueEn: 'Log weight of ONE dumbbell',
+      cueVi: 'Nhập khối lượng của 1 quả tạ đơn'
+    },
+    {
+      id: 'hammer_curl',
+      nameEn: 'Dumbbell Hammer Curl',
+      nameVi: 'Cuốn tạ búa tay trước & cẳng tay (1 bên)',
+      category: 'arms',
+      equipment: 'dumbbell',
+      ref1RM70kgMale: 17.5,
+      primaryMuscles: ['forearms', 'biceps'],
+      secondaryMuscles: [],
+      cueEn: 'Neutral grip targeting brachialis & forearms',
+      cueVi: 'Cầm dọc tạ ăn sâu vào cơ cánh tay quay & cẳng tay'
+    },
+    {
+      id: 'barbell_wrist_curl',
+      nameEn: 'Seated Barbell Wrist Curl',
+      nameVi: 'Cuốn cổ tay thanh đòn (Forearms)',
+      category: 'arms',
+      equipment: 'barbell',
+      ref1RM70kgMale: 32.0,
+      primaryMuscles: ['forearms'],
+      secondaryMuscles: [],
+      cueEn: 'Forearms resting on bench/thighs',
+      cueVi: 'Đặt cẳng tay cố định trên ghế để cuốn cổ tay'
+    },
+    {
+      id: 'tricep_pushdown',
+      nameEn: 'Cable Tricep Rope Pushdown',
+      nameVi: 'Nhấn cáp tay sau (Tricep Pushdown)',
+      category: 'arms',
+      equipment: 'cable',
+      ref1RM70kgMale: 34.0,
+      primaryMuscles: ['triceps'],
+      secondaryMuscles: [],
+      cueEn: 'Split rope apart at bottom lockout',
+      cueVi: 'Tách nhẹ hai đầu dây ở điểm khóa khớp đáy'
+    },
+    {
+      id: 'skull_crusher',
+      nameEn: 'EZ-Bar Skull Crusher',
+      nameVi: 'Nằm duỗi tay sau đòn EZ (Skull Crusher)',
+      category: 'arms',
+      equipment: 'barbell',
+      ref1RM70kgMale: 34.0,
+      primaryMuscles: ['triceps'],
+      secondaryMuscles: [],
+      cueEn: 'Lower bar behind forehead for long-head stretch',
+      cueVi: 'Hạ đòn qua đỉnh đầu để kéo giãn đầu dài tay sau'
+    },
+
+    // CORE
+    {
+      id: 'cable_crunch',
+      nameEn: 'Kneeling Cable Crunch',
+      nameVi: 'Quỳ gập bụng dây cáp (Cable Crunch)',
+      category: 'core',
+      equipment: 'cable',
+      ref1RM70kgMale: 48.0,
+      primaryMuscles: ['abs'],
+      secondaryMuscles: [],
+      cueEn: 'Curl ribcage toward pelvis using abs, not hips',
+      cueVi: 'Cuộn lồng ngực về phía hông bằng cơ bụng'
+    },
+    {
+      id: 'hanging_leg_raise',
+      nameEn: 'Hanging Leg Raise',
+      nameVi: 'Treo xà nâng chân tập bụng',
+      category: 'core',
+      equipment: 'bodyweight',
+      isBodyweight: true,
+      bwLoadFactor: 0.55,
+      ref1RM70kgMale: 48.0,
+      primaryMuscles: ['abs'],
+      secondaryMuscles: ['forearms'],
+      cueEn: 'Enter 0 kg for bodyweight or ankle/dumbbell load',
+      cueVi: 'Nhập 0 nếu tập người không hoặc số kg tạ kẹp chân'
+    }
+  ];
+
+  const WORKOUT_PRESETS = [
+    {
+      id: 'push_ranked',
+      nameEn: 'Push Day (Chest, Shoulders, Triceps)',
+      nameVi: 'Buổi Đẩy Push (Ngực - Vai - Tay sau)',
+      exerciseIds: ['bench_press', 'incline_db_press', 'overhead_press', 'db_lateral_raise', 'tricep_pushdown']
+    },
+    {
+      id: 'pull_ranked',
+      nameEn: 'Pull Day (Back, Rear Delts, Biceps)',
+      nameVi: 'Buổi Kéo Pull (Lưng xô - Vai sau - Tay trước)',
+      exerciseIds: ['pull_ups', 'barbell_row', 'lat_pulldown', 'face_pull', 'barbell_curl', 'hammer_curl']
+    },
+    {
+      id: 'legs_ranked',
+      nameEn: 'Leg Day (Quads, Glutes, Hamstrings, Calves)',
+      nameVi: 'Buổi Chân Legs (Đùi - Mông - Bắp chuối)',
+      exerciseIds: ['barbell_squat', 'romanian_deadlift', 'hip_thrust', 'leg_extension', 'standing_calf_raise']
+    },
+    {
+      id: 'fullbody_starter',
+      nameEn: 'Welcome Ranked Calibration (Big 4)',
+      nameVi: 'Định hạng Sức mạnh Nhanh (4 Bài Trụ Cột)',
+      exerciseIds: ['bench_press', 'barbell_squat', 'deadlift', 'pull_ups', 'cable_crunch']
+    }
+  ];
+
+  const EXERCISE_BY_ID = Object.create(null);
+  for (let i = 0; i < EXERCISES.length; i += 1) {
+    EXERCISE_BY_ID[EXERCISES[i].id] = EXERCISES[i];
+  }
+
+  const MUSCLE_BY_ID = Object.create(null);
+  for (let i = 0; i < MUSCLE_GROUPS.length; i += 1) {
+    MUSCLE_BY_ID[MUSCLE_GROUPS[i].id] = MUSCLE_GROUPS[i];
+  }
+
+  return {
+    MUSCLE_GROUPS: MUSCLE_GROUPS,
+    MUSCLE_BY_ID: MUSCLE_BY_ID,
+    CATEGORY_FILTERS: CATEGORY_FILTERS,
+    EXERCISES: EXERCISES,
+    EXERCISE_BY_ID: EXERCISE_BY_ID,
+    WORKOUT_PRESETS: WORKOUT_PRESETS
+  };
+});
+
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    const exercisesData = require('../data/exercises.js');
+    module.exports = factory(exercisesData);
+  } else {
+    root.LiftoffCore = factory(root.LiftoffExercises);
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (catalog) {
+  'use strict';
+
+  const LBS_PER_KG = 2.2046226218;
+  const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
+  const FULL_RECOVERY_MS = 60 * 60 * 60 * 1000; // 60 hours to 100% fresh
+
+  // Official 9 Liftoff Strength Ranks (1 - 1000 scale) + Unranked state
+  const RANK_TIERS = [
+    { id: 'unranked', index: 0, nameEn: 'Unranked', nameVi: 'Chưa có Rank', min: 0, max: 0, color: '#4B5278', glow: 'rgba(75, 82, 120, 0.35)' },
+    { id: 'wood', index: 1, nameEn: 'Wood', nameVi: 'Wood (Gỗ)', min: 1, max: 199, color: '#B07D52', glow: 'rgba(176, 125, 82, 0.40)' },
+    { id: 'bronze', index: 2, nameEn: 'Bronze', nameVi: 'Bronze (Đồng)', min: 200, max: 299, color: '#D98245', glow: 'rgba(217, 130, 69, 0.42)' },
+    { id: 'silver', index: 3, nameEn: 'Silver', nameVi: 'Silver (Bạc)', min: 300, max: 399, color: '#CBD5E1', glow: 'rgba(203, 213, 225, 0.42)' },
+    { id: 'gold', index: 4, nameEn: 'Gold', nameVi: 'Gold (Vàng)', min: 400, max: 499, color: '#FACC15', glow: 'rgba(250, 204, 21, 0.45)' },
+    { id: 'platinum', index: 5, nameEn: 'Platinum', nameVi: 'Platinum (Bạch Kim)', min: 500, max: 599, color: '#2DD4BF', glow: 'rgba(45, 212, 191, 0.48)' },
+    { id: 'diamond', index: 6, nameEn: 'Diamond', nameVi: 'Diamond (Kim Cương)', min: 600, max: 699, color: '#38BDF8', glow: 'rgba(56, 189, 248, 0.50)' },
+    { id: 'champion', index: 7, nameEn: 'Champion', nameVi: 'Champion (Quán Quân)', min: 700, max: 799, color: '#C084FC', glow: 'rgba(192, 132, 252, 0.52)' },
+    { id: 'titan', index: 8, nameEn: 'Titan', nameVi: 'Titan', min: 800, max: 899, color: '#FB7185', glow: 'rgba(251, 113, 133, 0.54)' },
+    { id: 'olympian', index: 9, nameEn: 'Olympian', nameVi: 'Olympian (Đỉnh Cao)', min: 900, max: 1000, color: '#FDE047', glow: 'rgba(253, 224, 71, 0.62)' }
+  ];
+
+  // Strictly monotonic piecewise-linear knots mapping normalized strength ratio rho -> [0, 1000] rating.
+  // Calibrated so rho = 1.00 maps to Rating 400 (Gold 0 LP) and matches empirical Liftoff Titan/Olympian benchmarks.
+  const CURVE_KNOTS = [
+    { rho: 0.00, rating: 0 },
+    { rho: 0.25, rating: 60 },
+    { rho: 0.55, rating: 200 }, // Bronze floor
+    { rho: 0.77, rating: 300 }, // Silver floor
+    { rho: 1.00, rating: 400 }, // Gold floor
+    { rho: 1.20, rating: 500 }, // Platinum floor
+    { rho: 1.38, rating: 600 }, // Diamond floor
+    { rho: 1.57, rating: 700 }, // Champion floor
+    { rho: 1.76, rating: 800 }, // Titan floor
+    { rho: 2.00, rating: 900 }, // Olympian floor
+    { rho: 2.38, rating: 1000 } // Cap
+  ];
+
+  function isFiniteNumber(v) {
+    return typeof v === 'number' && Number.isFinite(v);
+  }
+
+  function clamp(val, minVal, maxVal) {
+    if (!isFiniteNumber(val)) return minVal;
+    if (val < minVal) return minVal;
+    if (val > maxVal) return maxVal;
+    return val;
+  }
+
+  function kgToUnit(kg, unit) {
+    if (!isFiniteNumber(kg)) return 0;
+    return unit === 'lbs' ? kg * LBS_PER_KG : kg;
+  }
+
+  function unitToKg(value, unit) {
+    if (!isFiniteNumber(value)) return 0;
+    return unit === 'lbs' ? value / LBS_PER_KG : value;
+  }
+
+  function formatWeight(kg, unit) {
+    const converted = kgToUnit(kg, unit);
+    const rounded = Math.round(converted * 10) / 10;
+    return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+  }
+
+  function sanitizeBodyweightKg(bwKg) {
+    if (!isFiniteNumber(bwKg) || bwKg <= 0) return 70;
+    return clamp(bwKg, 30, 250);
+  }
+
+  function sexCurveMultiplier(sex) {
+    return sex === 'female' ? 0.64 : 1.0;
+  }
+
+  function getScaledGold1RMKg(exercise, bodyweightKg, sex) {
+    if (!exercise || !isFiniteNumber(exercise.ref1RM70kgMale)) return 50;
+    const bw = sanitizeBodyweightKg(bodyweightKg);
+    const allometric = Math.pow(bw / 70, 2 / 3);
+    return exercise.ref1RM70kgMale * allometric * sexCurveMultiplier(sex);
+  }
+
+  // Liftoff official Epley formula: weight * (1 + min(reps, 30) / 30), working sets only.
+  function estimateSet1RMKg(setInput, exercise, bodyweightKg) {
+    if (!setInput || !exercise) return 0;
+    if (setInput.setType === 'warmup') return 0;
+
+    const rawReps = isFiniteNumber(setInput.reps) ? Math.floor(setInput.reps) : 0;
+    if (rawReps < 1) return 0;
+    const cappedReps = Math.min(rawReps, 30);
+
+    const bw = sanitizeBodyweightKg(bodyweightKg);
+    const rawWeightKg = isFiniteNumber(setInput.weightKg) ? setInput.weightKg : 0;
+
+    let effectiveLoadKg = rawWeightKg;
+    if (exercise.isBodyweight) {
+      if (rawWeightKg < 0) return 0;
+      effectiveLoadKg = bw * (exercise.bwLoadFactor || 0.9) + rawWeightKg;
+    } else if (rawWeightKg <= 0) {
+      return 0;
+    }
+
+    return effectiveLoadKg * (1 + cappedReps / 30);
+  }
+
+  function interpolateRatingFromRho(rho) {
+    if (!isFiniteNumber(rho) || rho <= 0) return 0;
+    const last = CURVE_KNOTS[CURVE_KNOTS.length - 1];
+    if (rho >= last.rho) return 1000;
+
+    for (let i = 0; i < CURVE_KNOTS.length - 1; i += 1) {
+      const a = CURVE_KNOTS[i];
+      const b = CURVE_KNOTS[i + 1];
+      if (rho >= a.rho && rho <= b.rho) {
+        const t = (rho - a.rho) / (b.rho - a.rho);
+        return a.rating + t * (b.rating - a.rating);
+      }
+    }
+    return 0;
+  }
+
+  function invertRhoFromRating(targetRating) {
+    const r = clamp(targetRating, 0, 1000);
+    if (r <= 0) return 0;
+    for (let i = 0; i < CURVE_KNOTS.length - 1; i += 1) {
+      const a = CURVE_KNOTS[i];
+      const b = CURVE_KNOTS[i + 1];
+      if (r >= a.rating && r <= b.rating) {
+        const t = (r - a.rating) / (b.rating - a.rating);
+        return a.rho + t * (b.rho - a.rho);
+      }
+    }
+    return CURVE_KNOTS[CURVE_KNOTS.length - 1].rho;
+  }
+
+  function score1RMToRating(oneRepMaxKg, exercise, bodyweightKg, sex) {
+    if (!isFiniteNumber(oneRepMaxKg) || oneRepMaxKg <= 0 || !exercise) return 0;
+    const goldRef = getScaledGold1RMKg(exercise, bodyweightKg, sex);
+    if (goldRef <= 0) return 0;
+    const rho = oneRepMaxKg / goldRef;
+    const rawRating = interpolateRatingFromRho(rho);
+    return clamp(Math.floor(rawRating + 1e-9), 1, 1000);
+  }
+
+  function evaluateSetStrength(setInput, exercise, bodyweightKg, sex) {
+    const e1rmKg = estimateSet1RMKg(setInput, exercise, bodyweightKg);
+    if (e1rmKg <= 0) {
+      return {
+        valid: false,
+        e1rmKg: 0,
+        rating: 0,
+        tier: RANK_TIERS[0],
+        lp: 0,
+        nextTier: RANK_TIERS[1],
+        pointsToNext: 1
+      };
+    }
+    const rating = score1RMToRating(e1rmKg, exercise, bodyweightKg, sex);
+    const tierInfo = ratingToTierAndLp(rating);
+    return {
+      valid: true,
+      e1rmKg: e1rmKg,
+      rating: rating,
+      tier: tierInfo.tier,
+      lp: tierInfo.lp,
+      nextTier: tierInfo.nextTier,
+      pointsToNext: tierInfo.pointsToNext
+    };
+  }
+
+  function ratingToTierAndLp(rating) {
+    const r = isFiniteNumber(rating) ? Math.floor(clamp(rating, 0, 1000)) : 0;
+    if (r <= 0) {
+      return {
+        rating: 0,
+        tier: RANK_TIERS[0],
+        lp: 0,
+        nextTier: RANK_TIERS[1],
+        pointsToNext: 1
+      };
+    }
+
+    let matched = RANK_TIERS[1];
+    for (let i = 1; i < RANK_TIERS.length; i += 1) {
+      if (r >= RANK_TIERS[i].min) {
+        matched = RANK_TIERS[i];
+      }
+    }
+
+    let lp = 0;
+    if (matched.id === 'wood') {
+      lp = Math.min(99, Math.floor(((r - 1) / 199) * 100));
+    } else if (matched.id === 'olympian') {
+      lp = r - 900; // 0 to 100+ LP in Olympian
+    } else {
+      lp = r - matched.min; // Exact 0 - 99 LP per 100-point tier
+    }
+
+    const nextIndex = matched.index + 1;
+    const nextTier = nextIndex < RANK_TIERS.length ? RANK_TIERS[nextIndex] : null;
+    const pointsToNext = nextTier ? Math.max(0, nextTier.min - r) : 0;
+
+    return {
+      rating: r,
+      tier: matched,
+      lp: lp,
+      nextTier: nextTier,
+      pointsToNext: pointsToNext
+    };
+  }
+
+  // Exact analytical inverse: computes minimum weight (in requested unit, snapped to 0.5 kg or 1 lb)
+  // needed at `reps` so that score1RMToRating >= targetRating.
+  function solveWeightForRating(exercise, targetRating, reps, bodyweightKg, sex, unit) {
+    if (!exercise || !isFiniteNumber(targetRating) || targetRating <= 0) return null;
+    const cappedRating = clamp(Math.ceil(targetRating), 1, 1000);
+    const cappedReps = clamp(Math.floor(isFiniteNumber(reps) ? reps : 8), 1, 30);
+    const goldRefKg = getScaledGold1RMKg(exercise, bodyweightKg, sex);
+    const targetRho = invertRhoFromRating(cappedRating);
+    const required1RMKg = targetRho * goldRefKg;
+    const requiredEffectiveLoadKg = required1RMKg / (1 + cappedReps / 30);
+
+    const bw = sanitizeBodyweightKg(bodyweightKg);
+    let rawExternalKg = requiredEffectiveLoadKg;
+    if (exercise.isBodyweight) {
+      rawExternalKg = Math.max(0, requiredEffectiveLoadKg - bw * (exercise.bwLoadFactor || 0.9));
+    }
+
+    const useLbs = unit === 'lbs';
+    const stepUnit = useLbs ? 1.0 : 0.5;
+    const rawInUnit = kgToUnit(rawExternalKg, useLbs ? 'lbs' : 'kg');
+    let snappedUnit = Math.ceil((rawInUnit - 1e-9) / stepUnit) * stepUnit;
+    if (!exercise.isBodyweight && snappedUnit < stepUnit) {
+      snappedUnit = stepUnit;
+    }
+
+    // Guarantee rounding boundary never falls 1 point short due to floating-point floor
+    for (let guard = 0; guard < 5; guard += 1) {
+      const checkKg = unitToKg(snappedUnit, useLbs ? 'lbs' : 'kg');
+      const checkEval = evaluateSetStrength(
+        { weightKg: checkKg, reps: cappedReps, setType: 'working' },
+        exercise,
+        bw,
+        sex
+      );
+      if (checkEval.rating >= cappedRating) {
+        return {
+          weightInUnit: Math.round(snappedUnit * 10) / 10,
+          weightKg: checkKg,
+          reps: cappedReps,
+          achievedRating: checkEval.rating
+        };
+      }
+      snappedUnit += stepUnit;
+    }
+
+    const finalKg = unitToKg(snappedUnit, useLbs ? 'lbs' : 'kg');
+    return {
+      weightInUnit: Math.round(snappedUnit * 10) / 10,
+      weightKg: finalKg,
+      reps: cappedReps,
+      achievedRating: cappedRating
+    };
+  }
+
+  // Recomputes ALL Exercise Ranks, Muscle Ranks, Overall Bodyrank, PRs, Streak, XP, and Recovery deterministically from workouts[]
+  function computeDerivedRankSnapshot(profile, workouts, nowMs) {
+    const bw = sanitizeBodyweightKg(profile && profile.bodyweightKg);
+    const sex = profile && profile.sex === 'female' ? 'female' : 'male';
+    const safeNow = isFiniteNumber(nowMs) ? nowMs : 0;
+    const sortedWorkouts = Array.isArray(workouts)
+      ? workouts.slice().sort(function (a, b) { return (a.completedAtMs || 0) - (b.completedAtMs || 0); })
+      : [];
+
+    const exerciseStats = Object.create(null);
+    for (let i = 0; i < catalog.EXERCISES.length; i += 1) {
+      const ex = catalog.EXERCISES[i];
+      exerciseStats[ex.id] = {
+        exerciseId: ex.id,
+        bestRating: 0,
+        best1RMKg: 0,
+        bestWeightKg: 0,
+        bestSetReps: 0,
+        totalWorkingSets: 0,
+        lastSet: null,
+        lastCompletedAtMs: 0,
+        tierInfo: ratingToTierAndLp(0)
+      };
+    }
+
+    const muscleLastTrainedMs = Object.create(null);
+    let totalWorkingSetsAll = 0;
+    let totalVolumeKgAll = 0;
+
+    for (let wIdx = 0; wIdx < sortedWorkouts.length; wIdx += 1) {
+      const w = sortedWorkouts[wIdx];
+      const wBw = sanitizeBodyweightKg(w.bodyweightKg || bw);
+      const entries = Array.isArray(w.entries) ? w.entries : [];
+
+      for (let eIdx = 0; eIdx < entries.length; eIdx += 1) {
+        const entry = entries[eIdx];
+        const ex = catalog.EXERCISE_BY_ID[entry.exerciseId];
+        if (!ex) continue;
+        const stat = exerciseStats[ex.id];
+        const sets = Array.isArray(entry.sets) ? entry.sets : [];
+        let workedThisEx = false;
+
+        for (let sIdx = 0; sIdx < sets.length; sIdx += 1) {
+          const s = sets[sIdx];
+          if (s.completed === false) continue;
+          const res = evaluateSetStrength(s, ex, wBw, sex);
+          if (!res.valid) continue;
+
+          workedThisEx = true;
+          stat.totalWorkingSets += 1;
+          totalWorkingSetsAll += 1;
+          const volLoad = ex.isBodyweight ? (wBw * (ex.bwLoadFactor || 0.9) + Math.max(0, s.weightKg || 0)) : (s.weightKg || 0);
+          totalVolumeKgAll += volLoad * Math.max(1, Math.floor(s.reps || 0));
+
+          stat.lastSet = {
+            weightKg: s.weightKg || 0,
+            reps: Math.floor(s.reps || 0),
+            e1rmKg: res.e1rmKg,
+            rating: res.rating
+          };
+          stat.lastCompletedAtMs = w.completedAtMs || 0;
+
+          if (res.rating > stat.bestRating || (res.rating === stat.bestRating && res.e1rmKg > stat.best1RMKg)) {
+            stat.bestRating = res.rating;
+            stat.best1RMKg = res.e1rmKg;
+            stat.bestWeightKg = s.weightKg || 0;
+            stat.bestSetReps = Math.floor(s.reps || 0);
+          } else if ((s.weightKg || 0) > stat.bestWeightKg) {
+            stat.bestWeightKg = s.weightKg || 0;
+          }
+        }
+
+        if (workedThisEx) {
+          const allMuscles = ex.primaryMuscles.concat(ex.secondaryMuscles || []);
+          for (let m = 0; m < allMuscles.length; m += 1) {
+            const mId = allMuscles[m];
+            if (!muscleLastTrainedMs[mId] || (w.completedAtMs || 0) > muscleLastTrainedMs[mId]) {
+              muscleLastTrainedMs[mId] = w.completedAtMs || 0;
+            }
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < catalog.EXERCISES.length; i += 1) {
+      const exId = catalog.EXERCISES[i].id;
+      exerciseStats[exId].tierInfo = ratingToTierAndLp(exerciseStats[exId].bestRating);
+    }
+
+    // Rollup 15 Muscle Ranks: take top weighted score among exercises hitting that muscle
+    // (Primary contribution = 1.00 * rating, Secondary assist = 0.78 * rating, blended with top-2 consistency)
+    const muscleRanks = Object.create(null);
+    let rankedMusclesCount = 0;
+    let sumAllMuscleRatings = 0;
+    const rankedMuscleRatings = [];
+
+    for (let mIdx = 0; mIdx < catalog.MUSCLE_GROUPS.length; mIdx += 1) {
+      const mGroup = catalog.MUSCLE_GROUPS[mIdx];
+      const mId = mGroup.id;
+      const contributions = [];
+
+      for (let eIdx = 0; eIdx < catalog.EXERCISES.length; eIdx += 1) {
+        const ex = catalog.EXERCISES[eIdx];
+        const rating = exerciseStats[ex.id].bestRating;
+        if (rating <= 0) continue;
+
+        if (ex.primaryMuscles.indexOf(mId) !== -1) {
+          contributions.push({ exerciseId: ex.id, effectiveRating: rating, role: 'primary' });
+        } else if (ex.secondaryMuscles && ex.secondaryMuscles.indexOf(mId) !== -1) {
+          contributions.push({ exerciseId: ex.id, effectiveRating: Math.round(rating * 0.78), role: 'secondary' });
+        }
+      }
+
+      contributions.sort(function (a, b) { return b.effectiveRating - a.effectiveRating; });
+
+      let muscleRating = 0;
+      if (contributions.length === 1) {
+        muscleRating = contributions[0].effectiveRating;
+      } else if (contributions.length >= 2) {
+        // Dominated by strongest lift (75%) + second lift (25%) so logging more exercises never lowers your muscle rank!
+        muscleRating = Math.round(contributions[0].effectiveRating * 0.75 + contributions[1].effectiveRating * 0.25);
+        if (muscleRating < contributions[0].effectiveRating) {
+          muscleRating = contributions[0].effectiveRating;
+        }
+      }
+
+      const lastMs = muscleLastTrainedMs[mId] || 0;
+      let recoveryPct = 100;
+      if (lastMs > 0 && safeNow >= lastMs) {
+        const elapsed = safeNow - lastMs;
+        recoveryPct = clamp(Math.round(30 + (elapsed / FULL_RECOVERY_MS) * 70), 30, 100);
+      }
+
+      const mTierInfo = ratingToTierAndLp(muscleRating);
+      if (muscleRating > 0) {
+        rankedMusclesCount += 1;
+        sumAllMuscleRatings += muscleRating;
+        rankedMuscleRatings.push(muscleRating);
+      }
+
+      muscleRanks[mId] = {
+        muscleId: mId,
+        rating: muscleRating,
+        tierInfo: mTierInfo,
+        topExerciseId: contributions.length > 0 ? contributions[0].exerciseId : null,
+        lastTrainedMs: lastMs,
+        recoveryPct: recoveryPct
+      };
+    }
+
+    // Overall Bodyrank: combines coverage across body + peak muscle strength
+    // Unlocks progressively as muscles get ranked; rewards balanced full-body training while staying monotonic!
+    let overallRating = 0;
+    if (rankedMuscleRatings.length > 0) {
+      rankedMuscleRatings.sort(function (a, b) { return b - a; });
+      const topSlice = rankedMuscleRatings.slice(0, Math.min(6, rankedMuscleRatings.length));
+      let topSum = 0;
+      for (let i = 0; i < topSlice.length; i += 1) topSum += topSlice[i];
+      const topAvg = topSum / topSlice.length;
+      const coverageFactor = 0.55 + 0.45 * Math.min(1, rankedMusclesCount / 10);
+      overallRating = clamp(Math.round(topAvg * coverageFactor), 1, 1000);
+    }
+    const overallTierInfo = ratingToTierAndLp(overallRating);
+
+    // Streak calculation (Liftoff FAQ rule: streak breaks only if > 3 days pass without a workout)
+    let streakDays = 0;
+    if (sortedWorkouts.length > 0) {
+      const dayBuckets = [];
+      for (let i = 0; i < sortedWorkouts.length; i += 1) {
+        const t = sortedWorkouts[i].completedAtMs || 0;
+        const dayIndex = Math.floor(t / (24 * 60 * 60 * 1000));
+        if (dayBuckets.length === 0 || dayBuckets[dayBuckets.length - 1] !== dayIndex) {
+          dayBuckets.push(dayIndex);
+        }
+      }
+      const lastWorkoutMs = sortedWorkouts[sortedWorkouts.length - 1].completedAtMs || 0;
+      if (safeNow <= 0 || safeNow - lastWorkoutMs <= THREE_DAYS_MS) {
+        let activeSpanStart = dayBuckets[dayBuckets.length - 1];
+        for (let i = dayBuckets.length - 1; i >= 1; i -= 1) {
+          const gapDays = dayBuckets[i] - dayBuckets[i - 1];
+          if (gapDays <= 3) {
+            activeSpanStart = dayBuckets[i - 1];
+          } else {
+            break;
+          }
+        }
+        streakDays = Math.max(1, dayBuckets[dayBuckets.length - 1] - activeSpanStart + 1);
+      }
+    }
+
+    // XP & Leveling (Lv.1 starts at 0 XP; every workout + working set + ranked muscle awards XP)
+    const xpTotal = sortedWorkouts.length * 120 + totalWorkingSetsAll * 25 + rankedMusclesCount * 40;
+    const xpPerLevel = 300;
+    const level = 1 + Math.floor(xpTotal / xpPerLevel);
+    const levelXp = xpTotal % xpPerLevel;
+    const levelProgressPct = Math.round((levelXp / xpPerLevel) * 100);
+    const gems = sortedWorkouts.length * 15 + rankedMusclesCount * 10;
+
+    // Welcome Quest progress (matches 40% starting feel when profile is ready, 100% once first ranked workout is posted!)
+    let questStepsDone = 1; // Step 1: Opened Liftoff
+    if (profile && profile.bodyweightConfirmed) questStepsDone += 1;
+    if (sortedWorkouts.length >= 1) questStepsDone += 2;
+    if (rankedMusclesCount >= 4) questStepsDone += 1;
+    const welcomeQuestPct = Math.min(100, Math.round((questStepsDone / 5) * 100));
+
+    // Unlock Bodyrank Progress bar (0 to 100% across 6 ranked muscle groups)
+    const bodyrankUnlockPct = Math.min(100, Math.round((Math.max(1.8, rankedMusclesCount) / 6) * 100));
+
+    return {
+      exerciseStats: exerciseStats,
+      muscleRanks: muscleRanks,
+      rankedMusclesCount: rankedMusclesCount,
+      overallRating: overallRating,
+      overallTierInfo: overallTierInfo,
+      streakDays: streakDays,
+      xpTotal: xpTotal,
+      level: level,
+      levelXp: levelXp,
+      xpPerLevel: xpPerLevel,
+      levelProgressPct: levelProgressPct,
+      gems: gems,
+      totalWorkouts: sortedWorkouts.length,
+      totalWorkingSets: totalWorkingSetsAll,
+      totalVolumeKg: totalVolumeKgAll,
+      welcomeQuestPct: sortedWorkouts.length === 0 && !(profile && profile.bodyweightConfirmed) ? 40 : welcomeQuestPct,
+      bodyrankUnlockPct: sortedWorkouts.length === 0 ? 58 : bodyrankUnlockPct
+    };
+  }
+
+  function createInitialState() {
+    return {
+      schemaVersion: 1,
+      lang: 'en',
+      soundEnabled: true,
+      profile: {
+        name: 'Bình',
+        sex: 'male',
+        bodyweightKg: 68,
+        unit: 'kg',
+        bodyweightConfirmed: false,
+        restTimerSec: 90
+      },
+      workouts: [],
+      nutritionLog: {
+        caloriesTarget: 2450,
+        proteinTargetG: 140,
+        meals: []
+      },
+      activeSession: null
+    };
+  }
+
+  function createSessionFromExercises(exerciseIds, state, nowMs) {
+    const derived = computeDerivedRankSnapshot(state.profile, state.workouts, nowMs);
+    const entries = [];
+    const seen = Object.create(null);
+
+    for (let i = 0; i < exerciseIds.length; i += 1) {
+      const id = exerciseIds[i];
+      if (seen[id] || !catalog.EXERCISE_BY_ID[id]) continue;
+      seen[id] = true;
+      const ex = catalog.EXERCISE_BY_ID[id];
+      const prevStat = derived.exerciseStats[id];
+      const defaultWeightKg = prevStat && prevStat.lastSet
+        ? prevStat.lastSet.weightKg
+        : (ex.isBodyweight ? 0 : Math.round(getScaledGold1RMKg(ex, state.profile.bodyweightKg, state.profile.sex) * 0.55));
+      const defaultReps = prevStat && prevStat.lastSet ? prevStat.lastSet.reps : 8;
+
+      entries.push({
+        exerciseId: id,
+        sets: [
+          { id: id + '_s1', setType: 'working', weightKg: defaultWeightKg, reps: defaultReps, completed: false },
+          { id: id + '_s2', setType: 'working', weightKg: defaultWeightKg, reps: defaultReps, completed: false },
+          { id: id + '_s3', setType: 'working', weightKg: defaultWeightKg, reps: defaultReps, completed: false }
+        ]
+      });
+    }
+
+    return {
+      startedAtMs: isFiniteNumber(nowMs) ? nowMs : 0,
+      title: '',
+      postToDiscovery: true,
+      entries: entries
+    };
+  }
+
+  // Pure functional reducer: (state, action, nowMs) -> { state, celebration }
+  function reduceAppState(prevState, action, nowMs) {
+    const state = JSON.parse(JSON.stringify(prevState || createInitialState()));
+    const safeNow = isFiniteNumber(nowMs) ? nowMs : 0;
+    if (!action || typeof action.type !== 'string') {
+      return { state: state, celebration: null };
+    }
+
+    switch (action.type) {
+      case 'SET_LANG': {
+        state.lang = action.lang === 'vi' ? 'vi' : 'en';
+        return { state: state, celebration: null };
+      }
+
+      case 'TOGGLE_SOUND': {
+        state.soundEnabled = !state.soundEnabled;
+        return { state: state, celebration: null };
+      }
+
+      case 'UPDATE_PROFILE': {
+        if (action.name && typeof action.name === 'string') {
+          state.profile.name = action.name.trim().slice(0, 32) || state.profile.name;
+        }
+        if (action.sex === 'male' || action.sex === 'female') {
+          state.profile.sex = action.sex;
+        }
+        if (action.unit === 'kg' || action.unit === 'lbs') {
+          state.profile.unit = action.unit;
+        }
+        if (isFiniteNumber(action.bodyweightKg) && action.bodyweightKg > 0) {
+          state.profile.bodyweightKg = sanitizeBodyweightKg(action.bodyweightKg);
+          state.profile.bodyweightConfirmed = true;
+          state.nutritionLog.proteinTargetG = Math.round(state.profile.bodyweightKg * 2.0);
+          state.nutritionLog.caloriesTarget = Math.round(state.profile.bodyweightKg * 35);
+        }
+        if (isFiniteNumber(action.restTimerSec) && action.restTimerSec >= 15) {
+          state.profile.restTimerSec = clamp(Math.round(action.restTimerSec), 15, 600);
+        }
+        return { state: state, celebration: null };
+      }
+
+      case 'START_WORKOUT': {
+        const ids = Array.isArray(action.exerciseIds) && action.exerciseIds.length > 0
+          ? action.exerciseIds
+          : ['bench_press', 'barbell_squat', 'lat_pulldown'];
+        state.activeSession = createSessionFromExercises(ids, state, safeNow);
+        if (action.title) state.activeSession.title = String(action.title).slice(0, 60);
+        return { state: state, celebration: null };
+      }
+
+      case 'ADD_EXERCISES_TO_SESSION': {
+        if (!state.activeSession) {
+          state.activeSession = createSessionFromExercises(action.exerciseIds || [], state, safeNow);
+          return { state: state, celebration: null };
+        }
+        const addSession = createSessionFromExercises(action.exerciseIds || [], state, safeNow);
+        const existingIds = Object.create(null);
+        for (let i = 0; i < state.activeSession.entries.length; i += 1) {
+          existingIds[state.activeSession.entries[i].exerciseId] = true;
+        }
+        for (let i = 0; i < addSession.entries.length; i += 1) {
+          const item = addSession.entries[i];
+          if (!existingIds[item.exerciseId]) {
+            state.activeSession.entries.push(item);
+          }
+        }
+        return { state: state, celebration: null };
+      }
+
+      case 'REMOVE_EXERCISE_FROM_SESSION': {
+        if (!state.activeSession) return { state: state, celebration: null };
+        state.activeSession.entries = state.activeSession.entries.filter(function (e) {
+          return e.exerciseId !== action.exerciseId;
+        });
+        return { state: state, celebration: null };
+      }
+
+      case 'ADD_SET': {
+        if (!state.activeSession) return { state: state, celebration: null };
+        for (let i = 0; i < state.activeSession.entries.length; i += 1) {
+          const entry = state.activeSession.entries[i];
+          if (entry.exerciseId === action.exerciseId) {
+            const last = entry.sets.length > 0 ? entry.sets[entry.sets.length - 1] : null;
+            entry.sets.push({
+              id: entry.exerciseId + '_s' + String(entry.sets.length + 1) + '_' + String(safeNow % 100000),
+              setType: 'working',
+              weightKg: last ? last.weightKg : 20,
+              reps: last ? last.reps : 8,
+              completed: false
+            });
+            break;
+          }
+        }
+        return { state: state, celebration: null };
+      }
+
+      case 'UPDATE_SET': {
+        if (!state.activeSession) return { state: state, celebration: null };
+        for (let i = 0; i < state.activeSession.entries.length; i += 1) {
+          const entry = state.activeSession.entries[i];
+          if (entry.exerciseId !== action.exerciseId) continue;
+          for (let sIdx = 0; sIdx < entry.sets.length; sIdx += 1) {
+            const setItem = entry.sets[sIdx];
+            if (setItem.id !== action.setId) continue;
+            if (isFiniteNumber(action.weightKg) && action.weightKg >= 0) {
+              setItem.weightKg = clamp(action.weightKg, 0, 1500);
+            }
+            if (isFiniteNumber(action.reps) && action.reps >= 0) {
+              setItem.reps = clamp(Math.floor(action.reps), 0, 500);
+            }
+            if (action.setType === 'working' || action.setType === 'warmup' || action.setType === 'dropset') {
+              setItem.setType = action.setType;
+            }
+            if (typeof action.completed === 'boolean') {
+              setItem.completed = action.completed;
+            }
+            break;
+          }
+        }
+        return { state: state, celebration: null };
+      }
+
+      case 'DELETE_SET': {
+        if (!state.activeSession) return { state: state, celebration: null };
+        for (let i = 0; i < state.activeSession.entries.length; i += 1) {
+          const entry = state.activeSession.entries[i];
+          if (entry.exerciseId === action.exerciseId) {
+            entry.sets = entry.sets.filter(function (s) { return s.id !== action.setId; });
+            break;
+          }
+        }
+        return { state: state, celebration: null };
+      }
+
+      case 'CANCEL_WORKOUT': {
+        state.activeSession = null;
+        return { state: state, celebration: null };
+      }
+
+      case 'POST_WORKOUT': {
+        if (!state.activeSession) return { state: state, celebration: null };
+        const beforeSnap = computeDerivedRankSnapshot(state.profile, state.workouts, safeNow);
+
+        // Keep sets that were checked OR have valid positive reps & load (frictionless mobile UX)
+        const cleanedEntries = [];
+        for (let i = 0; i < state.activeSession.entries.length; i += 1) {
+          const entry = state.activeSession.entries[i];
+          const ex = catalog.EXERCISE_BY_ID[entry.exerciseId];
+          if (!ex) continue;
+          const keptSets = [];
+          for (let sIdx = 0; sIdx < entry.sets.length; sIdx += 1) {
+            const s = entry.sets[sIdx];
+            const hasValidNumbers = s.reps >= 1 && (ex.isBodyweight ? s.weightKg >= 0 : s.weightKg > 0);
+            if (s.completed && hasValidNumbers) {
+              keptSets.push({
+                id: s.id,
+                setType: s.setType || 'working',
+                weightKg: s.weightKg,
+                reps: Math.floor(s.reps),
+                completed: true
+              });
+            }
+          }
+          if (keptSets.length > 0) {
+            cleanedEntries.push({
+              exerciseId: ex.id,
+              sets: keptSets
+            });
+          }
+        }
+
+        if (cleanedEntries.length === 0) {
+          return { state: state, celebration: { emptyError: true } };
+        }
+
+        const durationSec = state.activeSession.startedAtMs > 0 && safeNow >= state.activeSession.startedAtMs
+          ? Math.max(60, Math.round((safeNow - state.activeSession.startedAtMs) / 1000))
+          : 1800;
+
+        const workoutRecord = {
+          id: 'wk_' + String(safeNow) + '_' + String(state.workouts.length + 1),
+          title: state.activeSession.title || '',
+          completedAtMs: safeNow,
+          durationSec: durationSec,
+          bodyweightKg: state.profile.bodyweightKg,
+          entries: cleanedEntries
+        };
+
+        state.profile.bodyweightConfirmed = true;
+        state.workouts.push(workoutRecord);
+        state.activeSession = null;
+
+        const afterSnap = computeDerivedRankSnapshot(state.profile, state.workouts, safeNow);
+
+        // Compute Rank-Ups, LP gains, and Personal Records broken in this workout!
+        const exerciseRankUps = [];
+        for (let i = 0; i < cleanedEntries.length; i += 1) {
+          const exId = cleanedEntries[i].exerciseId;
+          const prevStat = beforeSnap.exerciseStats[exId];
+          const nextStat = afterSnap.exerciseStats[exId];
+          if (!nextStat) continue;
+
+          // Best set achieved specifically inside this workout
+          let sessionBestRating = 0;
+          let sessionBest1RMKg = 0;
+          const exObj = catalog.EXERCISE_BY_ID[exId];
+          for (let sIdx = 0; sIdx < cleanedEntries[i].sets.length; sIdx += 1) {
+            const ev = evaluateSetStrength(
+              cleanedEntries[i].sets[sIdx],
+              exObj,
+              state.profile.bodyweightKg,
+              state.profile.sex
+            );
+            if (ev.valid && ev.rating > sessionBestRating) {
+              sessionBestRating = ev.rating;
+              sessionBest1RMKg = ev.e1rmKg;
+            }
+          }
+
+          exerciseRankUps.push({
+            exerciseId: exId,
+            oldRating: prevStat ? prevStat.bestRating : 0,
+            newRating: nextStat.bestRating,
+            sessionRating: sessionBestRating,
+            session1RMKg: sessionBest1RMKg,
+            oldTier: prevStat ? prevStat.tierInfo.tier : RANK_TIERS[0],
+            newTier: nextStat.tierInfo.tier,
+            newLp: nextStat.tierInfo.lp,
+            ratingDelta: Math.max(0, nextStat.bestRating - (prevStat ? prevStat.bestRating : 0)),
+            tierUpgraded: nextStat.tierInfo.tier.index > (prevStat ? prevStat.tierInfo.tier.index : 0),
+            isNewPR: nextStat.best1RMKg > (prevStat ? prevStat.best1RMKg : 0) + 1e-6
+          });
+        }
+
+        const muscleUpgrades = [];
+        for (let m = 0; m < catalog.MUSCLE_GROUPS.length; m += 1) {
+          const mId = catalog.MUSCLE_GROUPS[m].id;
+          const prevM = beforeSnap.muscleRanks[mId];
+          const nextM = afterSnap.muscleRanks[mId];
+          if (nextM.rating > prevM.rating) {
+            muscleUpgrades.push({
+              muscleId: mId,
+              oldRating: prevM.rating,
+              newRating: nextM.rating,
+              oldTier: prevM.tierInfo.tier,
+              newTier: nextM.tierInfo.tier,
+              tierUpgraded: nextM.tierInfo.tier.index > prevM.tierInfo.tier.index
+            });
+          }
+        }
+
+        const celebration = {
+          workoutId: workoutRecord.id,
+          durationSec: durationSec,
+          xpEarned: Math.max(0, afterSnap.xpTotal - beforeSnap.xpTotal),
+          gemsEarned: Math.max(0, afterSnap.gems - beforeSnap.gems),
+          oldLevel: beforeSnap.level,
+          newLevel: afterSnap.level,
+          oldOverallRating: beforeSnap.overallRating,
+          newOverallRating: afterSnap.overallRating,
+          oldOverallTier: beforeSnap.overallTierInfo.tier,
+          newOverallTier: afterSnap.overallTierInfo.tier,
+          newOverallLp: afterSnap.overallTierInfo.lp,
+          overallTierUpgraded: afterSnap.overallTierInfo.tier.index > beforeSnap.overallTierInfo.tier.index,
+          streakDays: afterSnap.streakDays,
+          exerciseRankUps: exerciseRankUps,
+          muscleUpgrades: muscleUpgrades
+        };
+
+        return { state: state, celebration: celebration };
+      }
+
+      case 'DELETE_WORKOUT': {
+        state.workouts = state.workouts.filter(function (w) { return w.id !== action.workoutId; });
+        return { state: state, celebration: null };
+      }
+
+      case 'ADD_MEAL': {
+        const name = String(action.name || 'Protein Meal').trim().slice(0, 40);
+        const kcal = clamp(Math.round(Number(action.kcal) || 0), 10, 4000);
+        const proteinG = clamp(Math.round(Number(action.proteinG) || 0), 0, 300);
+        state.nutritionLog.meals.push({
+          id: 'meal_' + String(safeNow) + '_' + String(state.nutritionLog.meals.length + 1),
+          name: name,
+          kcal: kcal,
+          proteinG: proteinG,
+          loggedAtMs: safeNow
+        });
+        return { state: state, celebration: null };
+      }
+
+      case 'DELETE_MEAL': {
+        state.nutritionLog.meals = state.nutritionLog.meals.filter(function (m) { return m.id !== action.mealId; });
+        return { state: state, celebration: null };
+      }
+
+      case 'LOAD_DEMO_DATA': {
+        const base = createInitialState();
+        base.lang = state.lang;
+        base.profile.bodyweightKg = 68;
+        base.profile.bodyweightConfirmed = true;
+        const dayMs = 24 * 60 * 60 * 1000;
+        base.workouts = [
+          {
+            id: 'wk_demo_1',
+            title: 'Push Strength Calibration',
+            completedAtMs: Math.max(1000, safeNow - 2 * dayMs),
+            durationSec: 2640,
+            bodyweightKg: 68,
+            entries: [
+              {
+                exerciseId: 'bench_press',
+                sets: [
+                  { id: 'd1', setType: 'warmup', weightKg: 40, reps: 10, completed: true },
+                  { id: 'd2', setType: 'working', weightKg: 60, reps: 8, completed: true },
+                  { id: 'd3', setType: 'working', weightKg: 65, reps: 6, completed: true }
+                ]
+              },
+              {
+                exerciseId: 'overhead_press',
+                sets: [
+                  { id: 'd4', setType: 'working', weightKg: 40, reps: 8, completed: true }
+                ]
+              },
+              {
+                exerciseId: 'tricep_pushdown',
+                sets: [
+                  { id: 'd5', setType: 'working', weightKg: 30, reps: 10, completed: true }
+                ]
+              }
+            ]
+          },
+          {
+            id: 'wk_demo_2',
+            title: 'Pull & Lower Ranked Session',
+            completedAtMs: Math.max(2000, safeNow - 1 * dayMs),
+            durationSec: 2920,
+            bodyweightKg: 68,
+            entries: [
+              {
+                exerciseId: 'barbell_squat',
+                sets: [
+                  { id: 'd6', setType: 'working', weightKg: 85, reps: 8, completed: true }
+                ]
+              },
+              {
+                exerciseId: 'pull_ups',
+                sets: [
+                  { id: 'd7', setType: 'working', weightKg: 0, reps: 10, completed: true }
+                ]
+              },
+              {
+                exerciseId: 'barbell_curl',
+                sets: [
+                  { id: 'd8', setType: 'working', weightKg: 30, reps: 10, completed: true }
+                ]
+              }
+            ]
+          }
+        ];
+        return { state: base, celebration: null };
+      }
+
+      case 'RESET_ALL': {
+        const fresh = createInitialState();
+        fresh.lang = state.lang;
+        return { state: fresh, celebration: null };
+      }
+
+      default:
+        return { state: state, celebration: null };
+    }
+  }
+
+  return {
+    LBS_PER_KG: LBS_PER_KG,
+    RANK_TIERS: RANK_TIERS,
+    CURVE_KNOTS: CURVE_KNOTS,
+    kgToUnit: kgToUnit,
+    unitToKg: unitToKg,
+    formatWeight: formatWeight,
+    sanitizeBodyweightKg: sanitizeBodyweightKg,
+    getScaledGold1RMKg: getScaledGold1RMKg,
+    estimateSet1RMKg: estimateSet1RMKg,
+    score1RMToRating: score1RMToRating,
+    evaluateSetStrength: evaluateSetStrength,
+    ratingToTierAndLp: ratingToTierAndLp,
+    solveWeightForRating: solveWeightForRating,
+    computeDerivedRankSnapshot: computeDerivedRankSnapshot,
+    createInitialState: createInitialState,
+    reduceAppState: reduceAppState
+  };
+});
+
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    const core = require('./rankEngine.js');
+    module.exports = factory(core);
+  } else {
+    root.LiftoffStorage = factory(root.LiftoffCore);
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (core) {
+  'use strict';
+
+  const STORAGE_KEY = 'liftoff_rank_clone_v1';
+  const memoryFallback = Object.create(null);
+
+  // Normalizes Vietnamese / iOS decimal keyboard input ("," -> ".", strips invisible chars, handles Unicode minus)
+  function parseDecimalInput(rawText) {
+    if (typeof rawText === 'number') {
+      return Number.isFinite(rawText) ? rawText : NaN;
+    }
+    if (typeof rawText !== 'string') return NaN;
+    const cleaned = rawText
+      .normalize('NFC')
+      .replace(/[\u200B-\u200D\uFEFF\s]/g, '')
+      .replace(/[−–—]/g, '-')
+      .replace(',', '.');
+    if (cleaned === '' || cleaned === '-' || cleaned === '.') return NaN;
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : NaN;
+  }
+
+  // Strict whitelist sanitizer preventing NaN / corrupted JSON from poisoning state
+  function validateStateSchema(candidate) {
+    const base = core.createInitialState();
+    if (!candidate || typeof candidate !== 'object') return base;
+
+    base.lang = candidate.lang === 'vi' ? 'vi' : 'en';
+    base.soundEnabled = candidate.soundEnabled !== false;
+
+    if (candidate.profile && typeof candidate.profile === 'object') {
+      if (typeof candidate.profile.name === 'string' && candidate.profile.name.trim()) {
+        base.profile.name = candidate.profile.name.trim().slice(0, 32);
+      }
+      base.profile.sex = candidate.profile.sex === 'female' ? 'female' : 'male';
+      base.profile.unit = candidate.profile.unit === 'lbs' ? 'lbs' : 'kg';
+      base.profile.bodyweightKg = core.sanitizeBodyweightKg(Number(candidate.profile.bodyweightKg));
+      base.profile.bodyweightConfirmed = Boolean(candidate.profile.bodyweightConfirmed);
+      const rt = Number(candidate.profile.restTimerSec);
+      if (Number.isFinite(rt) && rt >= 15 && rt <= 600) {
+        base.profile.restTimerSec = Math.round(rt);
+      }
+    }
+
+    if (Array.isArray(candidate.workouts)) {
+      base.workouts = [];
+      for (let i = 0; i < candidate.workouts.length; i += 1) {
+        const w = candidate.workouts[i];
+        if (!w || typeof w !== 'object' || !Array.isArray(w.entries)) continue;
+        const safeEntries = [];
+        for (let eIdx = 0; eIdx < w.entries.length; eIdx += 1) {
+          const entry = w.entries[eIdx];
+          if (!entry || typeof entry.exerciseId !== 'string' || !Array.isArray(entry.sets)) continue;
+          const safeSets = [];
+          for (let sIdx = 0; sIdx < entry.sets.length; sIdx += 1) {
+            const s = entry.sets[sIdx];
+            if (!s || typeof s !== 'object') continue;
+            const wKg = Number(s.weightKg);
+            const reps = Number(s.reps);
+            if (!Number.isFinite(wKg) || !Number.isFinite(reps) || wKg < 0 || reps < 0) continue;
+            safeSets.push({
+              id: String(s.id || ('s_' + String(sIdx))),
+              setType: s.setType === 'warmup' || s.setType === 'dropset' ? s.setType : 'working',
+              weightKg: wKg,
+              reps: Math.floor(reps),
+              completed: s.completed !== false
+            });
+          }
+          if (safeSets.length > 0) {
+            safeEntries.push({ exerciseId: entry.exerciseId, sets: safeSets });
+          }
+        }
+        if (safeEntries.length > 0) {
+          base.workouts.push({
+            id: String(w.id || ('wk_' + String(i))),
+            title: typeof w.title === 'string' ? w.title.slice(0, 60) : '',
+            completedAtMs: Number.isFinite(Number(w.completedAtMs)) ? Number(w.completedAtMs) : 0,
+            durationSec: Number.isFinite(Number(w.durationSec)) ? Math.max(60, Math.round(Number(w.durationSec))) : 1800,
+            bodyweightKg: core.sanitizeBodyweightKg(Number(w.bodyweightKg) || base.profile.bodyweightKg),
+            entries: safeEntries
+          });
+        }
+      }
+    }
+
+    if (candidate.nutritionLog && typeof candidate.nutritionLog === 'object') {
+      const calT = Number(candidate.nutritionLog.caloriesTarget);
+      const proT = Number(candidate.nutritionLog.proteinTargetG);
+      if (Number.isFinite(calT) && calT >= 800 && calT <= 8000) base.nutritionLog.caloriesTarget = Math.round(calT);
+      if (Number.isFinite(proT) && proT >= 30 && proT <= 400) base.nutritionLog.proteinTargetG = Math.round(proT);
+      if (Array.isArray(candidate.nutritionLog.meals)) {
+        base.nutritionLog.meals = candidate.nutritionLog.meals
+          .filter(function (m) { return m && typeof m === 'object' && Number.isFinite(Number(m.kcal)); })
+          .map(function (m, idx) {
+            return {
+              id: String(m.id || ('meal_' + String(idx))),
+              name: String(m.name || 'Meal').slice(0, 40),
+              kcal: Math.max(0, Math.round(Number(m.kcal))),
+              proteinG: Math.max(0, Math.round(Number(m.proteinG) || 0)),
+              loggedAtMs: Number.isFinite(Number(m.loggedAtMs)) ? Number(m.loggedAtMs) : 0
+            };
+          });
+      }
+    }
+
+    if (candidate.activeSession && typeof candidate.activeSession === 'object' && Array.isArray(candidate.activeSession.entries)) {
+      base.activeSession = candidate.activeSession;
+    }
+
+    return base;
+  }
+
+  function loadState() {
+    let raw = null;
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        raw = window.localStorage.getItem(STORAGE_KEY);
+      }
+    } catch (_err) {
+      raw = memoryFallback[STORAGE_KEY] || null;
+    }
+    if (!raw) {
+      raw = memoryFallback[STORAGE_KEY] || null;
+    }
+    if (!raw) return core.createInitialState();
+
+    try {
+      const parsed = JSON.parse(raw);
+      return validateStateSchema(parsed);
+    } catch (_parseErr) {
+      return core.createInitialState();
+    }
+  }
+
+  function saveState(state) {
+    const clean = validateStateSchema(state);
+    const serialized = JSON.stringify(clean);
+    memoryFallback[STORAGE_KEY] = serialized;
+    try {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        window.localStorage.setItem(STORAGE_KEY, serialized);
+        return true;
+      }
+    } catch (_err) {
+      return false;
+    }
+    return true;
+  }
+
+  return {
+    STORAGE_KEY: STORAGE_KEY,
+    parseDecimalInput: parseDecimalInput,
+    validateStateSchema: validateStateSchema,
+    loadState: loadState,
+    saveState: saveState
+  };
+});
+
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.LiftoffI18n = factory();
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  const DICT = {
+    en: {
+      forYou: 'For You',
+      friends: 'Friends',
+      discovery: 'Discovery',
+      levelingUp: "You're Leveling Up.",
+      unlockBodyrank: 'Unlock your Bodyrank Progress for free!',
+      bodyrankActiveTitle: 'Your Overall Bodyrank',
+      gettingStarted: 'Getting Started',
+      welcomeQuest: 'Welcome Quest',
+      welcomeQuestDesc: 'Wrap up your first day on Liftoff and earn a special reward!',
+      continueBtn: 'Continue',
+      bwQuestTitle: 'Calibrate Bodyweight',
+      bwQuestDesc: 'Set your bodyweight & unit so every lift scores accurately on the 1-1000 scale.',
+      calibrateBtn: 'Set Now',
+      rankYourWorkout: 'Rank Your Workout',
+      chooseExercises: 'Choose Exercises',
+      resumeWorkout: 'Resume Active Workout',
+      startBtn: 'Start',
+      recoveryZone: 'Recovery Zone',
+      freshReady: 'Fresh & Ready',
+      recovering: 'Recovering',
+      navWorkout: 'Workout',
+      navHome: 'Home',
+      navRanks: 'Ranks',
+      navNutrition: 'Nutrition',
+      navFriends: 'Friends',
+      navProfile: 'Profile',
+      quickPresets: 'Ranked Workout Presets',
+      startEmptyOrPick: 'Or pick individual ranked exercises',
+      searchExercisesPlaceholder: 'Search 36+ ranked exercises (Bench, Squat...)',
+      selectedCount: 'selected',
+      startRankedSession: 'Start Ranked Workout',
+      addSelectedToWorkout: 'Add to Active Workout',
+      activeLoggerTitle: 'Ranked Workout',
+      bodyweightPill: 'BW',
+      restTimer: 'Rest',
+      finishPostBtn: 'Post & Rank',
+      setCol: 'SET',
+      prevCol: 'PREV',
+      repsCol: 'REPS',
+      liveRankCol: 'RANK',
+      addSetBtn: '+ Add Set',
+      addExerciseBtn: '+ Add Ranked Exercise',
+      cancelWorkoutBtn: 'Discard Workout',
+      nextRankTargetPrefix: 'Next rank',
+      maxTierReached: 'Olympian tier achieved — push higher LP!',
+      warmupHint: 'Warm-up (excluded from Rank)',
+      dropsetHint: 'Drop Set (ranked)',
+      workingHint: 'Working Set (ranked)',
+      emptyPostWarn: 'Check off (✓) at least 1 valid set with weight & reps to get your Rank!',
+      workoutRankedTitle: 'Workout Ranked!',
+      overallBodyrankLabel: 'Overall Bodyrank',
+      exerciseRanksEarned: 'Exercise Strength Ranks',
+      musclesUpgradedLabel: 'Muscle Bodygraph Upgrades',
+      newPrBadge: 'NEW 1RM PR',
+      rankUpBadge: 'RANK UP!',
+      awesomeContinue: 'Awesome — View Ranks',
+      frontView: 'Front',
+      backView: 'Back',
+      allMuscles: 'All 15 Muscles',
+      rankCalculatorTitle: 'Instant 1RM & Rank Calculator',
+      rankCalculatorSub: 'Preview any weight × reps without saving',
+      calcCheckBtn: 'Check Rank',
+      tierLadderTitle: '9 Liftoff Strength Ranks (1 - 1000)',
+      noRankedLiftsYet: 'No ranked sets logged yet. Tap Start Workout to place on the ladder!',
+      trainMuscleBtn: 'Rank This Muscle',
+      leaderboardTitle: 'Weekly Ranked Cohort',
+      leaderboardSub: 'Compete on Bodyrank Rating & Workout Streak',
+      youTag: 'YOU',
+      nutritionTitle: 'Strength Fuel & Protein',
+      nutritionSub: 'Auto-scaled to your bodyweight for recovery & muscle rank gains',
+      caloriesLabel: 'Calories',
+      proteinLabel: 'Protein',
+      quickAddMeal: 'Quick Log Meal',
+      profileSettingsTitle: 'Lifter Profile & Standards Curve',
+      sexMale: 'Male Curve',
+      sexFemale: 'Female Curve',
+      saveProfileBtn: 'Save Standards',
+      workoutHistoryTitle: 'Posted Ranked Workouts',
+      deletePostBtn: 'Delete Post (Recomputes Ranks)',
+      loadDemoBtn: 'Load Sample Ranked Data',
+      resetDataBtn: 'Reset All Data',
+      exportJsonBtn: 'Export Backup JSON'
+    },
+    vi: {
+      forYou: 'Dành cho bạn',
+      friends: 'Bạn bè',
+      discovery: 'Khám phá',
+      levelingUp: 'Bạn đang thăng cấp!',
+      unlockBodyrank: 'Mở khóa tiến độ Bodyrank miễn phí!',
+      bodyrankActiveTitle: 'Tổng Hạng Cơ Thể (Bodyrank)',
+      gettingStarted: 'Bắt đầu nhanh',
+      welcomeQuest: 'Nhiệm vụ Tân thủ',
+      welcomeQuestDesc: 'Hoàn thành buổi ghi tạ đầu tiên trên Liftoff để mở huy hiệu Rank!',
+      continueBtn: 'Tiếp tục',
+      bwQuestTitle: 'Chuẩn hóa Cân nặng',
+      bwQuestDesc: 'Nhập cân nặng & đơn vị kg/lbs để chấm chuẩn thang điểm 1-1000.',
+      calibrateBtn: 'Cài đặt',
+      rankYourWorkout: 'Ghi Mức Tạ Lên Rank',
+      chooseExercises: 'Chọn Bài Tập',
+      resumeWorkout: 'Tiếp tục buổi tập đang ghi',
+      startBtn: 'Bắt đầu',
+      recoveryZone: 'Vùng Phục Hồi Cơ',
+      freshReady: 'Sẵn sàng 100%',
+      recovering: 'Đang hồi phục',
+      navWorkout: 'Tập luyện',
+      navHome: 'Trang chủ',
+      navRanks: 'Xếp hạng',
+      navNutrition: 'Dinh dưỡng',
+      navFriends: 'Bạn bè',
+      navProfile: 'Hồ sơ',
+      quickPresets: 'Lịch tập Lên Rank Mẫu',
+      startEmptyOrPick: 'Hoặc tự chọn từng bài tập tính Rank',
+      searchExercisesPlaceholder: 'Tìm trong 36+ bài tập (Bench, Squat, Xô...)',
+      selectedCount: 'đã chọn',
+      startRankedSession: 'Bắt đầu Ghi Tạ',
+      addSelectedToWorkout: 'Thêm vào buổi đang tập',
+      activeLoggerTitle: 'Phiếu Ghi Tạ Tính Rank',
+      bodyweightPill: 'Cân nặng',
+      restTimer: 'Nghỉ',
+      finishPostBtn: 'Lưu & Chấm Rank',
+      setCol: 'HIỆP',
+      prevCol: 'TRƯỚC',
+      repsCol: 'REPS',
+      liveRankCol: 'RANK',
+      addSetBtn: '+ Thêm Hiệp',
+      addExerciseBtn: '+ Thêm Bài Tập Khác',
+      cancelWorkoutBtn: 'Hủy buổi tập',
+      nextRankTargetPrefix: 'Mục tiêu lên',
+      maxTierReached: 'Đã đạt đỉnh Olympian — cày thêm LP!',
+      warmupHint: 'Khởi động (không tính Rank)',
+      dropsetHint: 'Drop Set (có tính Rank)',
+      workingHint: 'Hiệp chính (tính Rank)',
+      emptyPostWarn: 'Hãy tích chọn (✓) ít nhất 1 hiệp hợp lệ có đủ mức tạ & số reps để chấm Rank!',
+      workoutRankedTitle: 'Đã Chấm Rank Buổi Tập!',
+      overallBodyrankLabel: 'Tổng Hạng Bodyrank',
+      exerciseRanksEarned: 'Rank Sức Mạnh Từng Bài',
+      musclesUpgradedLabel: 'Nhóm Cơ Thăng Hạng Trên Bodygraph',
+      newPrBadge: 'KỶ LỤC 1RM MỚI',
+      rankUpBadge: 'LÊN RANK!',
+      awesomeContinue: 'Tuyệt vời — Xem Bodygraph',
+      frontView: 'Mặt trước',
+      backView: 'Mặt sau',
+      allMuscles: 'Tất cả 15 vùng cơ',
+      rankCalculatorTitle: 'Máy Tính Nhanh 1RM & Rank',
+      rankCalculatorSub: 'Ướm thử mức tạ × số lần xem đạt Rank gì (không lưu)',
+      calcCheckBtn: 'Tính thử',
+      tierLadderTitle: '9 Bậc Rank Chuẩn Liftoff (1 - 1000)',
+      noRankedLiftsYet: 'Chưa có bài nào lên Rank. Bấm Ghi Mức Tạ để định hạng ngay!',
+      trainMuscleBtn: 'Tập nâng Rank cơ này',
+      leaderboardTitle: 'Bảng Xếp Hạng Tuần',
+      leaderboardSub: 'Đua điểm Bodyrank & Chuỗi ngày tập cùng hội Gym',
+      youTag: 'BẠN',
+      nutritionTitle: 'Dinh Dưỡng & Đạm Phục Hồi',
+      nutritionSub: 'Tự động tính theo cân nặng giúp tối ưu hồi phục cơ',
+      caloriesLabel: 'Calo (kcal)',
+      proteinLabel: 'Đạm (Protein)',
+      quickAddMeal: 'Ghi nhanh bữa ăn',
+      profileSettingsTitle: 'Hồ Sơ & Hệ Quy Chiếu Cân Nặng',
+      sexMale: 'Đường cong Nam',
+      sexFemale: 'Đường cong Nữ',
+      saveProfileBtn: 'Lưu chuẩn cân nặng',
+      workoutHistoryTitle: 'Lịch Sử Buổi Tập & PR',
+      deletePostBtn: 'Xóa buổi (Tự tính lại Rank)',
+      loadDemoBtn: 'Nạp dữ liệu mẫu thử Rank',
+      resetDataBtn: 'Xóa sạch làm lại từ Lv.1',
+      exportJsonBtn: 'Xuất file JSON sao lưu'
+    }
+  };
+
+  function t(lang, key) {
+    const bucket = lang === 'vi' ? DICT.vi : DICT.en;
+    return bucket[key] || DICT.en[key] || key;
+  }
+
+  return {
+    DICT: DICT,
+    t: t
+  };
+});
+
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.LiftoffBadges = factory();
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  const TIER_PALETTES = {
+    unranked: { top: '#DCE5F7', bot: '#8C9EC4', rim: '#FFFFFF', core: '#526080', accent: '#93C5FD', label: '?' },
+    wood: { top: '#D49A6A', bot: '#7C4D2B', rim: '#F3CFA4', core: '#4A2C17', accent: '#E7B584', label: 'W' },
+    bronze: { top: '#F09D63', bot: '#9A4E1C', rim: '#FFD0AD', core: '#5A2B0C', accent: '#FDBA8C', label: 'B' },
+    silver: { top: '#F1F5F9', bot: '#8A99AD', rim: '#FFFFFF', core: '#3B4758', accent: '#E2E8F0', label: 'S' },
+    gold: { top: '#FDE047', bot: '#CA8A04', rim: '#FEF9C3', core: '#6B4400', accent: '#FEF08A', label: 'G' },
+    platinum: { top: '#5EEAD4', bot: '#0F766E', rim: '#CCFBF1', core: '#083D3A', accent: '#99F6E4', label: 'P' },
+    diamond: { top: '#7DD3FC', bot: '#0284C7', rim: '#E0F2FE', core: '#082F49', accent: '#BAE6FD', label: 'D' },
+    champion: { top: '#D8B4FE', bot: '#7E22CE', rim: '#F3E8FF', core: '#3B0764', accent: '#E9D5FF', label: 'C' },
+    titan: { top: '#FDA4AF', bot: '#E11D48', rim: '#FFE4E6', core: '#4C0519', accent: '#FECDD3', label: 'T' },
+    olympian: { top: '#FEF08A', bot: '#EA580C', rim: '#FFFFFF', core: '#431407', accent: '#FDE047', label: 'Ω' }
+  };
+
+  let uidCounter = 0;
+
+  function renderRankHexBadge(tierId, sizePx) {
+    const sz = Number(sizePx) || 44;
+    const pal = TIER_PALETTES[tierId] || TIER_PALETTES.unranked;
+    uidCounter = (uidCounter + 1) % 100000;
+    const gid = 'rk_' + String(tierId) + '_' + String(uidCounter);
+    const isHighTier = tierId === 'diamond' || tierId === 'champion' || tierId === 'titan' || tierId === 'olympian';
+    const isCrown = tierId === 'champion' || tierId === 'titan' || tierId === 'olympian';
+
+    let centerGlyph = '';
+    if (tierId === 'unranked') {
+      centerGlyph =
+        '<text x="32" y="39" text-anchor="middle" fill="#64748B" font-size="23" font-weight="800" font-family="system-ui, -apple-system, sans-serif">?</text>' +
+        '<path d="M18 47 L46 47" stroke="#F59E0B" stroke-width="2.2" stroke-linecap="round" opacity="0.85"/>';
+    } else if (isCrown) {
+      centerGlyph =
+        '<polygon points="21,39 24,25 32,31 40,25 43,39" fill="' + pal.rim + '" stroke="' + pal.core + '" stroke-width="1.4" stroke-linejoin="round"/>' +
+        '<circle cx="32" cy="22" r="2.3" fill="' + pal.accent + '"/>';
+    } else if (isHighTier) {
+      centerGlyph =
+        '<polygon points="32,19 42,31 32,44 22,31" fill="' + pal.rim + '" opacity="0.92"/>' +
+        '<polygon points="32,23 38,31 32,40 26,31" fill="' + pal.top + '"/>';
+    } else {
+      centerGlyph =
+        '<polygon points="32,20 35.4,27.2 43.2,28.2 37.5,33.6 38.9,41.4 32,37.6 25.1,41.4 26.5,33.6 20.8,28.2 28.6,27.2" fill="' + pal.rim + '"/>';
+    }
+
+    const wingDecor = tierId === 'olympian' || tierId === 'titan'
+      ? '<polygon points="4,24 12,20 12,34 6,31" fill="' + pal.top + '" opacity="0.9"/>' +
+        '<polygon points="60,24 52,20 52,34 58,31" fill="' + pal.top + '" opacity="0.9"/>'
+      : '';
+
+    return (
+      '<svg width="' + sz + '" height="' + sz + '" viewBox="0 0 64 64" fill="none" aria-hidden="true">' +
+      '<defs>' +
+      '<linearGradient id="' + gid + '" x1="12" y1="6" x2="52" y2="58" gradientUnits="userSpaceOnUse">' +
+      '<stop offset="0%" stop-color="' + pal.top + '"/>' +
+      '<stop offset="100%" stop-color="' + pal.bot + '"/>' +
+      '</linearGradient>' +
+      '</defs>' +
+      wingDecor +
+      '<polygon points="32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5" fill="url(#' + gid + ')" stroke="' + pal.rim + '" stroke-width="2.4" stroke-linejoin="round"/>' +
+      '<polygon points="32,11 49,21 49,43 32,53 15,43 15,21" fill="' + (tierId === 'unranked' ? '#E2E8F0' : pal.core) + '" fill-opacity="' + (tierId === 'unranked' ? '0.92' : '0.52') + '" stroke="' + pal.accent + '" stroke-width="1.2"/>' +
+      centerGlyph +
+      '</svg>'
+    );
+  }
+
+  // Lifter holding loaded barbell illustration matching "Rank Your Workout -> Choose Exercises" crimson card
+  function renderDeadliftIllustration() {
+    return (
+      '<svg width="58" height="58" viewBox="0 0 64 64" fill="none" aria-hidden="true">' +
+      // Barbell shaft + plates
+      '<line x1="6" y1="41" x2="58" y2="41" stroke="#CBD5E1" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<rect x="9" y="32" width="4" height="18" rx="1.5" fill="#1E293B" stroke="#64748B" stroke-width="1"/>' +
+      '<rect x="14" y="34" width="3.2" height="14" rx="1" fill="#334155"/>' +
+      '<rect x="51" y="32" width="4" height="18" rx="1.5" fill="#1E293B" stroke="#64748B" stroke-width="1"/>' +
+      '<rect x="46.8" y="34" width="3.2" height="14" rx="1" fill="#334155"/>' +
+      // Legs & Shoes
+      '<path d="M28 36 L27 53" stroke="#FDBA74" stroke-width="4.2" stroke-linecap="round"/>' +
+      '<path d="M36 36 L37 53" stroke="#FDBA74" stroke-width="4.2" stroke-linecap="round"/>' +
+      '<rect x="24" y="52" width="6" height="3.5" rx="1.5" fill="#38BDF8"/>' +
+      '<rect x="34" y="52" width="6" height="3.5" rx="1.5" fill="#38BDF8"/>' +
+      // Shorts & Singlet
+      '<path d="M25 22 C25 19 39 19 39 22 L38 38 L33 38 L32 33 L31 38 L26 38 Z" fill="#2563EB"/>' +
+      // Arms reaching bar
+      '<path d="M25 22 L22 40" stroke="#FDBA74" stroke-width="3.6" stroke-linecap="round"/>' +
+      '<path d="M39 22 L42 40" stroke="#FDBA74" stroke-width="3.6" stroke-linecap="round"/>' +
+      // Head & Hair
+      '<circle cx="32" cy="13.5" r="5" fill="#FDBA74"/>' +
+      '<path d="M27 12.5 C27 8.5 37 8.5 37 12.5 C35 11 29 11 27 12.5 Z" fill="#1E1B4B"/>' +
+      '</svg>'
+    );
+  }
+
+  function renderAvatarSvg() {
+    return (
+      '<svg width="36" height="36" viewBox="0 0 40 40" fill="none" aria-hidden="true">' +
+      '<circle cx="20" cy="20" r="18.5" fill="#1E293B" stroke="#60A5FA" stroke-width="2"/>' +
+      '<path d="M10 35 C11 28 29 28 30 35" fill="#38BDF8"/>' +
+      '<circle cx="20" cy="17" r="7" fill="#FDE68A"/>' +
+      '<path d="M12.5 16 C12.5 9.5 27.5 9.5 27.5 16 C25 13 15 13 12.5 16 Z" fill="#312E81"/>' +
+      '<circle cx="17.5" cy="17.5" r="1" fill="#0F172A"/>' +
+      '<circle cx="22.5" cy="17.5" r="1" fill="#0F172A"/>' +
+      '<path d="M18 20.5 Q20 22 22 20.5" stroke="#0F172A" stroke-width="1.2" stroke-linecap="round"/>' +
+      '</svg>'
+    );
+  }
+
+  function renderNavIcon(tabId, active) {
+    switch (tabId) {
+      case 'workout':
+        return (
+          '<svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">' +
+          '<g transform="rotate(-35 14 14)">' +
+          '<rect x="4" y="10" width="3.5" height="8" rx="1.2" fill="#38BDF8"/>' +
+          '<rect x="8" y="8" width="3.5" height="12" rx="1.2" fill="#60A5FA"/>' +
+          '<rect x="11.5" y="12.5" width="5" height="3" rx="1" fill="#E2E8F0"/>' +
+          '<rect x="16.5" y="8" width="3.5" height="12" rx="1.2" fill="#60A5FA"/>' +
+          '<rect x="20.5" y="10" width="3.5" height="8" rx="1.2" fill="#38BDF8"/>' +
+          '</g>' +
+          '</svg>'
+        );
+      case 'home':
+        return (
+          '<svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">' +
+          '<path d="M5 13.2 L14 5.5 L23 13.2 V22.5 C23 23.3 22.3 24 21.5 24 H16.8 V17.5 H11.2 V24 H6.5 C5.7 24 5 23.3 5 22.5 Z" fill="' + (active ? '#60A5FA' : '#3B82F6') + '"/>' +
+          '<path d="M3.5 14 L14 5 L24.5 14" stroke="#BAE6FD" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>' +
+          '</svg>'
+        );
+      case 'ranks':
+        return (
+          '<svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">' +
+          '<polygon points="14,3 23.5,8.5 23.5,19.5 14,25 4.5,19.5 4.5,8.5" fill="#F59E0B" stroke="#FDE68A" stroke-width="1.4"/>' +
+          '<polygon points="14,8.2 15.8,11.9 19.9,12.5 16.9,15.3 17.6,19.4 14,17.5 10.4,19.4 11.1,15.3 8.1,12.5 12.2,11.9" fill="#FFFBEB"/>' +
+          '</svg>'
+        );
+      case 'nutrition':
+        return (
+          '<svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">' +
+          '<path d="M14 8 C15 5 18 4 19.5 4.5 C19 6.8 17 8.2 14 8 Z" fill="#4ADE80"/>' +
+          '<path d="M14 8.5 C10 8 6.5 11 6.5 15.8 C6.5 20.5 9.8 24 12.5 24 C13.5 24 14 23.4 15.5 23.4 C17 23.4 17.5 24 18.5 24 C21.2 24 23.5 20.2 23.5 15.8 C23.5 11 20 8 16 8.5 Z" fill="#EF4444"/>' +
+          '<path d="M15 9.2 C18.8 9 21.8 11.6 21.8 15.8 C21.8 19.4 19.8 22.3 17.8 22.3 C16.8 22.3 16 21.8 15 21.8 Z" fill="#FDE68A" opacity="0.92"/>' +
+          '</svg>'
+        );
+      case 'friends':
+        return (
+          '<svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">' +
+          '<circle cx="10.5" cy="10.5" r="3.6" fill="#60A5FA"/>' +
+          '<path d="M4.5 21.5 C4.5 17.5 16.5 17.5 16.5 21.5 V23 H4.5 Z" fill="#3B82F6"/>' +
+          '<circle cx="18.5" cy="11.5" r="3.1" fill="#93C5FD"/>' +
+          '<path d="M14.5 21.5 C15 18.2 23.5 18.2 23.5 21.5 V23 H14.5 Z" fill="#2563EB"/>' +
+          '</svg>'
+        );
+      case 'profile':
+      default:
+        return (
+          '<svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">' +
+          '<circle cx="14" cy="14" r="10.5" fill="#9333EA"/>' +
+          '<circle cx="14" cy="11.2" r="3.6" fill="#F3E8FF"/>' +
+          '<path d="M7.8 21.2 C8.8 17.2 19.2 17.2 20.2 21.2 C18.5 23 16.4 24 14 24 C11.6 24 9.5 23 7.8 21.2 Z" fill="#E9D5FF"/>' +
+          '</svg>'
+        );
+    }
+  }
+
+  return {
+    TIER_PALETTES: TIER_PALETTES,
+    renderRankHexBadge: renderRankHexBadge,
+    renderDeadliftIllustration: renderDeadliftIllustration,
+    renderAvatarSvg: renderAvatarSvg,
+    renderNavIcon: renderNavIcon
+  };
+});
+
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.LiftoffBodygraph = factory();
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  function getMuscleFill(muscleRanks, muscleId, previewMode) {
+    const info = muscleRanks && muscleRanks[muscleId];
+    if (info && info.rating > 0 && info.tierInfo && info.tierInfo.tier) {
+      return info.tierInfo.tier.color;
+    }
+    if (previewMode) {
+      const previewPalette = {
+        upper_chest: '#6374FF',
+        lower_chest: '#4C5EF0',
+        front_delts: '#8E62FF',
+        side_delts: '#7B5CFA',
+        biceps: '#5B6CFA',
+        forearms: '#4958DC',
+        abs: '#5171FF',
+        quads: '#445CE6',
+        traps: '#735FF5',
+        lats: '#4B60EB',
+        rear_delts: '#825FFA',
+        triceps: '#5D6DFB',
+        glutes: '#4658DC',
+        hamstrings: '#3E51CF',
+        calves: '#394BC2'
+      };
+      return previewPalette[muscleId] || '#4C5EF0';
+    }
+    return '#222844';
+  }
+
+  function buildAnteriorPaths(muscleRanks, selectedMuscleId, previewMode, interactive) {
+    function attrs(mId) {
+      const fill = getMuscleFill(muscleRanks, mId, previewMode);
+      const isSelected = selectedMuscleId === mId;
+      const stroke = isSelected ? '#FFFFFF' : '#A5C4FF';
+      const strokeWidth = isSelected ? '2.2' : '0.95';
+      const strokeOpacity = isSelected ? '1' : (previewMode ? '0.72' : '0.45');
+      const cls = interactive ? ' class="muscle-region" data-muscle="' + mId + '"' : '';
+      return cls + ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + strokeWidth + '" stroke-linejoin="round" stroke-opacity="' + strokeOpacity + '"';
+    }
+
+    return (
+      // Sculpted Head & Neck silhouette
+      '<ellipse cx="100" cy="22" rx="11.5" ry="13.5" fill="#2A3254" stroke="#64748B" stroke-width="1"/>' +
+      '<path d="M93 34 Q100 37 107 34 L109 43 Q100 45 91 43 Z" fill="#2A3254"/>' +
+
+      // Traps (Organic sloping collar)
+      '<path d="M77 46 Q86 41 92 42 L100 44 L108 42 Q114 41 123 46 L116 50 Q100 48 84 50 Z"' + attrs('traps') + '/>' +
+
+      // Upper Chest (Clavicular pec sweep)
+      '<path d="M73 50 Q86 48 99 50 L99 61 Q84 61 72 58 Z"' + attrs('upper_chest') + '/>' +
+      '<path d="M101 50 Q114 48 127 50 L128 58 Q116 61 101 61 Z"' + attrs('upper_chest') + '/>' +
+
+      // Mid & Lower Chest (Sculpted pectoral curve)
+      '<path d="M72 59 Q85 62 99 62 L99 77 Q84 79 75 73 Q71 67 72 59 Z"' + attrs('lower_chest') + '/>' +
+      '<path d="M101 62 Q115 62 128 59 Q129 67 125 73 Q116 79 101 77 Z"' + attrs('lower_chest') + '/>' +
+
+      // Front Delts (Teardrop anterior shoulder cap)
+      '<path d="M62 49 Q67 45 73 50 L71 66 Q63 63 62 49 Z"' + attrs('front_delts') + '/>' +
+      '<path d="M138 49 Q133 45 127 50 L129 66 Q137 63 138 49 Z"' + attrs('front_delts') + '/>' +
+
+      // Side Delts (Rounded lateral deltoid cap)
+      '<path d="M55 58 Q56 48 62 49 Q63 61 62 68 Q55 65 55 58 Z"' + attrs('side_delts') + '/>' +
+      '<path d="M145 58 Q144 48 138 49 Q137 61 138 68 Q145 65 145 58 Z"' + attrs('side_delts') + '/>' +
+
+      // Lats (Anterior V-taper flare under chest)
+      '<path d="M75 74 L82 78 L83 102 Q76 94 75 74 Z"' + attrs('lats') + '/>' +
+      '<path d="M125 74 L118 78 L117 102 Q124 94 125 74 Z"' + attrs('lats') + '/>' +
+
+      // Abs & Core (Anatomical 6-pack + lower V-taper)
+      '<path d="M84 78 Q91 77 99 78 L99 90 L84 90 Q83 84 84 78 Z"' + attrs('abs') + '/>' +
+      '<path d="M101 78 Q109 77 116 78 Q117 84 116 90 L101 90 Z"' + attrs('abs') + '/>' +
+      '<path d="M84 92 L99 92 L99 104 L85 104 Q84 98 84 92 Z"' + attrs('abs') + '/>' +
+      '<path d="M101 92 L116 92 Q116 98 115 104 L101 104 Z"' + attrs('abs') + '/>' +
+      '<path d="M86 106 L99 106 L99 124 Q91 122 87 118 Z"' + attrs('abs') + '/>' +
+      '<path d="M101 106 L114 106 L113 118 Q109 122 101 124 Z"' + attrs('abs') + '/>' +
+
+      // Biceps (Curved fusiform belly)
+      '<path d="M55 69 Q62 66 69 68 Q70 81 66 93 Q58 95 54 91 Q52 80 55 69 Z"' + attrs('biceps') + '/>' +
+      '<path d="M131 68 Q138 66 145 69 Q148 80 146 91 Q142 95 134 93 Q130 81 131 68 Z"' + attrs('biceps') + '/>' +
+
+      // Forearms (Brachioradialis taper to wrist)
+      '<path d="M53 93 Q60 95 65 95 Q63 110 57 123 L50 121 Q48 106 53 93 Z"' + attrs('forearms') + '/>' +
+      '<path d="M135 95 Q140 95 147 93 Q152 106 150 121 L143 123 Q137 110 135 95 Z"' + attrs('forearms') + '/>' +
+
+      // Quadriceps (Outer vastus lateralis sweep + inner teardrop VMO)
+      '<path d="M77 121 Q89 124 98 126 Q98 154 94 178 Q83 180 75 175 Q69 150 77 121 Z"' + attrs('quads') + '/>' +
+      '<path d="M102 126 Q111 124 123 121 Q131 150 125 175 Q117 180 106 178 Q102 154 102 126 Z"' + attrs('quads') + '/>' +
+      // Subtle anatomical quad feather lines
+      '<path d="M86 132 Q84 154 87 174 M114 132 Q116 154 113 174" stroke="#E0F2FE" stroke-width="0.7" opacity="0.32" pointer-events="none"/>' +
+
+      // Calves (Curved gastroc/tibialis contour)
+      '<path d="M75 182 Q84 180 93 183 Q95 200 88 226 L79 226 Q72 202 75 182 Z"' + attrs('calves') + '/>' +
+      '<path d="M107 183 Q116 180 125 182 Q128 202 121 226 L112 226 Q105 200 107 183 Z"' + attrs('calves') + '/>'
+    );
+  }
+
+  function buildPosteriorPaths(muscleRanks, selectedMuscleId, previewMode, interactive) {
+    function attrs(mId) {
+      const fill = getMuscleFill(muscleRanks, mId, previewMode);
+      const isSelected = selectedMuscleId === mId;
+      const stroke = isSelected ? '#FFFFFF' : '#A5C4FF';
+      const strokeWidth = isSelected ? '2.2' : '0.95';
+      const strokeOpacity = isSelected ? '1' : (previewMode ? '0.72' : '0.45');
+      const cls = interactive ? ' class="muscle-region" data-muscle="' + mId + '"' : '';
+      return cls + ' fill="' + fill + '" stroke="' + stroke + '" stroke-width="' + strokeWidth + '" stroke-linejoin="round" stroke-opacity="' + strokeOpacity + '"';
+    }
+
+    return (
+      '<ellipse cx="100" cy="22" rx="11.5" ry="13.5" fill="#2A3254" stroke="#64748B" stroke-width="1"/>' +
+      '<path d="M93 34 L107 34 L109 43 L91 43 Z" fill="#2A3254"/>' +
+
+      // Traps & Mid-Back kite
+      '<path d="M76 46 Q100 39 124 46 L113 76 L100 90 L87 76 Z"' + attrs('traps') + '/>' +
+
+      // Rear Delts
+      '<path d="M56 52 Q63 45 75 48 L72 66 Q58 64 56 52 Z"' + attrs('rear_delts') + '/>' +
+      '<path d="M144 52 Q137 45 125 48 L128 66 Q142 64 144 52 Z"' + attrs('rear_delts') + '/>' +
+
+      // Lats (Sweeping Cobra V-Taper)
+      '<path d="M72 66 L87 77 L99 113 L81 112 Q72 92 72 66 Z"' + attrs('lats') + '/>' +
+      '<path d="M128 66 L113 77 L101 113 L119 112 Q128 92 128 66 Z"' + attrs('lats') + '/>' +
+
+      // Triceps (Horseshoe)
+      '<path d="M55 68 Q62 66 69 68 Q69 82 65 94 Q57 95 53 91 Q52 79 55 68 Z"' + attrs('triceps') + '/>' +
+      '<path d="M131 68 Q138 66 145 68 Q148 79 147 91 Q143 95 135 94 Q131 82 131 68 Z"' + attrs('triceps') + '/>' +
+
+      // Forearms
+      '<path d="M53 93 Q60 95 65 96 Q62 110 57 123 L50 121 Q48 106 53 93 Z"' + attrs('forearms') + '/>' +
+      '<path d="M135 96 Q140 95 147 93 Q152 106 150 121 L143 123 Q138 110 135 96 Z"' + attrs('forearms') + '/>' +
+
+      // Glutes (Rounded anatomical gluteus maximus)
+      '<path d="M79 114 Q90 113 99 116 L99 143 Q83 145 75 137 Q73 125 79 114 Z"' + attrs('glutes') + '/>' +
+      '<path d="M101 116 Q110 113 121 114 Q127 125 125 137 Q117 145 101 143 Z"' + attrs('glutes') + '/>' +
+
+      // Hamstrings (Biceps femoris & semitendinosus sweep)
+      '<path d="M75 140 Q87 145 97 145 Q97 165 93 181 Q82 182 75 178 Q71 160 75 140 Z"' + attrs('hamstrings') + '/>' +
+      '<path d="M103 145 Q113 145 125 140 Q129 160 125 178 Q118 182 107 181 Q103 165 103 145 Z"' + attrs('hamstrings') + '/>' +
+
+      // Calves (Diamond gastrocnemius)
+      '<path d="M75 184 Q85 181 94 184 Q97 199 89 227 L79 227 Q71 201 75 184 Z"' + attrs('calves') + '/>' +
+      '<path d="M106 184 Q115 181 125 184 Q129 201 121 227 L111 227 Q103 199 106 184 Z"' + attrs('calves') + '/>'
+    );
+  }
+
+  function renderHeroTwinBodygraph(muscleRanks, hasAnyRank) {
+    const preview = !hasAnyRank;
+    return (
+      '<svg width="140" height="130" viewBox="28 32 180 132" fill="none" aria-hidden="true">' +
+      '<g transform="translate(36, 4) scale(0.88)" opacity="0.48">' +
+      buildPosteriorPaths(muscleRanks, null, preview, false) +
+      '</g>' +
+      '<g transform="translate(-4, 0) scale(0.95)">' +
+      buildAnteriorPaths(muscleRanks, null, preview, false) +
+      '</g>' +
+      '</svg>'
+    );
+  }
+
+  function renderInteractiveBodygraph(muscleRanks, viewMode, selectedMuscleId) {
+    const isBack = viewMode === 'back';
+    const inner = isBack
+      ? buildPosteriorPaths(muscleRanks, selectedMuscleId, false, true)
+      : buildAnteriorPaths(muscleRanks, selectedMuscleId, false, true);
+
+    return (
+      '<svg class="bodygraph-interactive-svg" viewBox="36 4 128 232" fill="none" role="img" aria-label="Anatomical Muscle Strength Rank Map">' +
+      inner +
+      '</svg>'
+    );
+  }
+
+  return {
+    renderHeroTwinBodygraph: renderHeroTwinBodygraph,
+    renderInteractiveBodygraph: renderInteractiveBodygraph
+  };
+});
+
+(function (root, factory) {
+  if (typeof module === 'object' && module.exports) {
+    module.exports = factory();
+  } else {
+    root.LiftoffSound = factory();
+  }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+  'use strict';
+
+  let audioCtx = null;
+  let activeVoices = 0;
+  const MAX_VOICES = 6;
+
+  function ensureContext() {
+    if (typeof window === 'undefined') return null;
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!audioCtx) {
+      try {
+        audioCtx = new Ctx();
+      } catch (_e) {
+        return null;
+      }
+    }
+    if (audioCtx.state === 'suspended') {
+      audioCtx.resume().catch(function () {});
+    }
+    return audioCtx;
+  }
+
+  function playTone(freqHz, startOffsetSec, durationSec, gainPeak, type) {
+    if (activeVoices >= MAX_VOICES) return;
+    const ctx = ensureContext();
+    if (!ctx) return;
+
+    try {
+      const now = ctx.currentTime + (startOffsetSec || 0);
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = type || 'triangle';
+      osc.frequency.setValueAtTime(freqHz, now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(gainPeak || 0.08, now + 0.015);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + durationSec);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      activeVoices += 1;
+      osc.onended = function () {
+        activeVoices = Math.max(0, activeVoices - 1);
+      };
+      osc.start(now);
+      osc.stop(now + durationSec + 0.02);
+    } catch (_e) {
+      // Ignore blocked autoplay
+    }
+  }
+
+  function playSetCheck(enabled) {
+    if (!enabled) return;
+    playTone(587.33, 0, 0.09, 0.07, 'sine');
+    playTone(880.0, 0.05, 0.12, 0.08, 'triangle');
+  }
+
+  function playRestDone(enabled) {
+    if (!enabled) return;
+    playTone(659.25, 0, 0.14, 0.09, 'triangle');
+    playTone(783.99, 0.12, 0.14, 0.09, 'triangle');
+    playTone(1046.5, 0.24, 0.28, 0.11, 'sine');
+  }
+
+  function playRankUpFanfare(enabled, didUpgradeTier) {
+    if (!enabled) return;
+    if (didUpgradeTier) {
+      playTone(523.25, 0, 0.16, 0.09, 'triangle');
+      playTone(659.25, 0.1, 0.16, 0.09, 'triangle');
+      playTone(783.99, 0.2, 0.18, 0.10, 'triangle');
+      playTone(1046.5, 0.32, 0.42, 0.12, 'sine');
+    } else {
+      playTone(523.25, 0, 0.14, 0.08, 'sine');
+      playTone(783.99, 0.1, 0.25, 0.09, 'triangle');
+    }
+  }
+
+  return {
+    playSetCheck: playSetCheck,
+    playRestDone: playRestDone,
+    playRankUpFanfare: playRankUpFanfare
+  };
+});
+
+(function () {
+  'use strict';
+
+  const catalog = window.LiftoffExercises;
+  const core = window.LiftoffCore;
+  const storage = window.LiftoffStorage;
+  const i18n = window.LiftoffI18n;
+  const badges = window.LiftoffBadges;
+  const bodygraph = window.LiftoffBodygraph;
+  const sound = window.LiftoffSound;
+
+  let appState = storage.loadState();
+
+  const ui = {
+    activeTab: 'home', // workout | home | ranks | nutrition | friends | profile
+    homeSubtab: 'foryou', // foryou | friends | discovery
+    ranksViewMode: 'front', // front | back
+    selectedMuscleId: 'lower_chest',
+    pickerOpen: false,
+    pickerAddingToActive: false,
+    pickerCategory: 'all',
+    pickerSearch: '',
+    pickerSelectedIds: ['bench_press', 'barbell_squat', 'lat_pulldown'],
+    celebrationData: null,
+    toastMessage: '',
+    restEndAtMs: 0,
+    calcExerciseId: 'bench_press',
+    calcWeightText: '70',
+    calcRepsText: '8'
+  };
+
+  let tickerId = null;
+
+  function stopTicker() {
+    if (tickerId !== null) {
+      clearInterval(tickerId);
+      tickerId = null;
+    }
+  }
+
+  function syncTicker() {
+    if (typeof document !== 'undefined' && document.hidden) {
+      stopTicker();
+      return;
+    }
+    const needsTick = Boolean(appState.activeSession) || ui.restEndAtMs > Date.now();
+    if (needsTick && tickerId === null) {
+      tickerId = setInterval(onSecondTick, 1000);
+    } else if (!needsTick && tickerId !== null) {
+      stopTicker();
+    }
+  }
+
+  function formatDuration(sec) {
+    const s = Math.max(0, Math.floor(sec || 0));
+    const m = Math.floor(s / 60);
+    const rem = s % 60;
+    return String(m).padStart(2, '0') + ':' + String(rem).padStart(2, '0');
+  }
+
+  function onSecondTick() {
+    const now = Date.now();
+    if (ui.restEndAtMs > 0 && now >= ui.restEndAtMs) {
+      ui.restEndAtMs = 0;
+      sound.playRestDone(appState.soundEnabled);
+      renderAll();
+      return;
+    }
+
+    const durEl = document.getElementById('live-session-duration');
+    if (durEl && appState.activeSession) {
+      const elapsedSec = Math.max(0, Math.floor((now - appState.activeSession.startedAtMs) / 1000));
+      durEl.textContent = formatDuration(elapsedSec);
+    }
+
+    const restEl = document.getElementById('live-rest-countdown');
+    if (restEl) {
+      if (ui.restEndAtMs > now) {
+        const leftSec = Math.ceil((ui.restEndAtMs - now) / 1000);
+        restEl.textContent = i18n.t(appState.lang, 'restTimer') + ' ' + formatDuration(leftSec);
+      } else {
+        restEl.textContent = i18n.t(appState.lang, 'restTimer') + ' ' + String(appState.profile.restTimerSec) + 's';
+      }
+    }
+    syncTicker();
+  }
+
+  function escapeHtml(str) {
+    return String(str == null ? '' : str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  function tr(key) {
+    return i18n.t(appState.lang, key);
+  }
+
+  function exName(ex) {
+    if (!ex) return '';
+    return appState.lang === 'vi' ? ex.nameVi : ex.nameEn;
+  }
+
+  function exCue(ex) {
+    if (!ex) return '';
+    return appState.lang === 'vi' ? ex.cueVi : ex.cueEn;
+  }
+
+  function tierName(tier) {
+    if (!tier) return '';
+    return appState.lang === 'vi' ? tier.nameVi : tier.nameEn;
+  }
+
+  function muscleName(m) {
+    if (!m) return '';
+    return appState.lang === 'vi' ? m.nameVi : m.nameEn;
+  }
+
+  function dispatch(action) {
+    const now = Date.now();
+    const outcome = core.reduceAppState(appState, action, now);
+    appState = outcome.state;
+    storage.saveState(appState);
+
+    if (outcome.celebration) {
+      if (outcome.celebration.emptyError) {
+        showToast(tr('emptyPostWarn'));
+      } else {
+        ui.celebrationData = outcome.celebration;
+        ui.restEndAtMs = 0;
+        const anyTierUp = outcome.celebration.overallTierUpgraded ||
+          outcome.celebration.exerciseRankUps.some(function (x) { return x.tierUpgraded; });
+        sound.playRankUpFanfare(appState.soundEnabled, anyTierUp);
+      }
+    }
+    syncTicker();
+    renderAll();
+  }
+
+  let toastTimeout = null;
+  function showToast(msg) {
+    ui.toastMessage = msg;
+    renderToast();
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(function () {
+      ui.toastMessage = '';
+      renderToast();
+    }, 3200);
+  }
+
+  function renderToast() {
+    const el = document.getElementById('toast-container');
+    if (!el) return;
+    if (!ui.toastMessage) {
+      el.hidden = true;
+      el.innerHTML = '';
+      return;
+    }
+    el.hidden = false;
+    el.innerHTML =
+      '<div style="background:#1E293B;border:1px solid #F59E0B;color:#FEF3C7;padding:10px 14px;border-radius:12px;font-size:13.5px;font-weight:700;box-shadow:0 10px 24px rgba(0,0,0,0.5);">' +
+      escapeHtml(ui.toastMessage) +
+      '</div>';
+  }
+
+  function renderQuestRingSvg(pct) {
+    const r = 18;
+    const c = 2 * Math.PI * r;
+    const offset = c * (1 - Math.min(100, Math.max(0, pct)) / 100);
+    return (
+      '<div class="quest-ring-wrap tabular">' +
+      '<svg width="46" height="46" viewBox="0 0 46 46" aria-hidden="true" style="position:absolute;inset:0;transform:rotate(-90deg);">' +
+      '<circle cx="23" cy="23" r="' + r + '" stroke="rgba(255,255,255,0.22)" stroke-width="4" fill="none"/>' +
+      '<circle cx="23" cy="23" r="' + r + '" stroke="#4ADE80" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + c.toFixed(1) + '" stroke-dashoffset="' + offset.toFixed(1) + '" fill="none"/>' +
+      '</svg>' +
+      '<span>' + String(pct) + '%</span>' +
+      '</div>'
+    );
+  }
+
+  function renderHeader(snap) {
+    const headerEl = document.getElementById('app-header');
+    if (!headerEl) return;
+
+    const soundBellSvg = appState.soundEnabled
+      ? '<svg width="19" height="19" viewBox="0 0 24 24" fill="#FACC15" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/></svg>'
+      : '<svg width="19" height="19" viewBox="0 0 24 24" fill="#64748B" aria-hidden="true"><path d="M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2z"/><line x1="3" y1="3" x2="21" y2="21" stroke="#F87171" stroke-width="2.2"/></svg>';
+
+    const flameColor = snap.streakDays > 0 ? '#FB923C' : '#525870';
+
+    headerEl.innerHTML =
+      '<button type="button" id="btn-header-profile" class="level-cluster" data-action="go-tab" data-tab="profile" aria-label="Profile Level ' + snap.level + '">' +
+      '<span class="avatar-wrap">' + badges.renderAvatarSvg() + '</span>' +
+      '<span class="level-track-group">' +
+      '<span class="level-label tabular">Lv.' + String(snap.level) + '</span>' +
+      '<span class="xp-bar-outer"><span class="xp-bar-inner" style="width:' + Math.max(10, snap.levelProgressPct) + '%;"></span></span>' +
+      '</span>' +
+      '</button>' +
+
+      '<div class="header-counters">' +
+      '<div class="counter-pill tabular" title="Workout Streak">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="' + flameColor + '" aria-hidden="true"><path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67z"/></svg>' +
+      '<span>' + String(snap.streakDays) + '</span>' +
+      '</div>' +
+      '<div class="counter-pill tabular" title="Liftoff Gems">' +
+      '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="#38BDF8" stroke="#BAE6FD" stroke-width="1.4"/><polygon points="12,5 17,12 12,19 7,12" fill="#E0F2FE"/></svg>' +
+      '<span>' + String(snap.gems) + '</span>' +
+      '</div>' +
+      '<button type="button" id="btn-lang-toggle" class="lang-toggle-btn" data-action="toggle-lang" aria-label="Switch Language">' +
+      (appState.lang === 'vi' ? 'VI' : 'EN') +
+      '</button>' +
+      '<button type="button" id="btn-sound-bell" class="icon-action-btn" data-action="toggle-sound" aria-label="Toggle Sound Effects">' +
+      soundBellSvg +
+      '</button>' +
+      '</div>';
+  }
+
+  function renderHomeView(snap) {
+    const hasRanked = snap.overallRating > 0;
+    const heroEyebrow = hasRanked
+      ? tr('bodyrankActiveTitle') + ' • ' + String(snap.rankedMusclesCount) + '/15'
+      : tr('levelingUp');
+    const heroHeadline = hasRanked
+      ? tierName(snap.overallTierInfo.tier) + ' • ' + String(snap.overallRating) + ' pts (' + String(snap.overallTierInfo.lp) + ' LP)'
+      : tr('unlockBodyrank');
+    const heroPct = hasRanked
+      ? (snap.overallTierInfo.tier.id === 'olympian' ? 100 : Math.max(12, snap.overallTierInfo.lp))
+      : snap.bodyrankUnlockPct;
+
+    const subtabsHtml =
+      '<nav class="subtabs-row" aria-label="Home Feed Sections">' +
+      '<button type="button" id="subtab-foryou" class="subtab-btn' + (ui.homeSubtab === 'foryou' ? ' is-active' : '') + '" data-action="set-home-subtab" data-subtab="foryou">' + escapeHtml(tr('forYou')) + '</button>' +
+      '<button type="button" id="subtab-friends" class="subtab-btn' + (ui.homeSubtab === 'friends' ? ' is-active' : '') + '" data-action="set-home-subtab" data-subtab="friends">' + escapeHtml(tr('friends')) + '</button>' +
+      '<button type="button" id="subtab-discovery" class="subtab-btn' + (ui.homeSubtab === 'discovery' ? ' is-active' : '') + '" data-action="set-home-subtab" data-subtab="discovery">' + escapeHtml(tr('discovery')) + '</button>' +
+      '</nav>';
+
+    if (ui.homeSubtab === 'friends') {
+      return subtabsHtml + '<div class="main-content">' + renderFriendsLeaderboardInner(snap) + '</div>';
+    }
+
+    if (ui.homeSubtab === 'discovery') {
+      return subtabsHtml + '<div class="main-content">' + renderDiscoveryFeedInner(snap) + '</div>';
+    }
+
+    // Group recovery summary across 6 major muscle zones
+    const zones = [
+      { labelEn: 'Chest', labelVi: 'Ngực', ids: ['upper_chest', 'lower_chest'] },
+      { labelEn: 'Back & Lats', labelVi: 'Lưng & Xô', ids: ['lats', 'traps'] },
+      { labelEn: 'Shoulders', labelVi: 'Vai', ids: ['front_delts', 'side_delts', 'rear_delts'] },
+      { labelEn: 'Arms', labelVi: 'Tay trước/sau', ids: ['biceps', 'triceps', 'forearms'] },
+      { labelEn: 'Quads & Glutes', labelVi: 'Đùi & Mông', ids: ['quads', 'glutes'] },
+      { labelEn: 'Hamstrings & Core', labelVi: 'Đùi sau & Bụng', ids: ['hamstrings', 'calves', 'abs'] }
+    ];
+
+    let recoveryCellsHtml = '';
+    for (let i = 0; i < zones.length; i += 1) {
+      const z = zones[i];
+      let minRec = 100;
+      let bestTier = core.RANK_TIERS[0];
+      for (let j = 0; j < z.ids.length; j += 1) {
+        const mr = snap.muscleRanks[z.ids[j]];
+        if (mr) {
+          if (mr.recoveryPct < minRec) minRec = mr.recoveryPct;
+          if (mr.tierInfo.tier.index > bestTier.index) bestTier = mr.tierInfo.tier;
+        }
+      }
+      const barColor = minRec >= 85 ? '#4ADE80' : (minRec >= 55 ? '#FBBF24' : '#FB7185');
+      const zName = appState.lang === 'vi' ? z.labelVi : z.labelEn;
+      recoveryCellsHtml +=
+        '<div class="recovery-item">' +
+        '<div class="recovery-top">' +
+        '<span>' + escapeHtml(zName) + '</span>' +
+        '<span class="tabular" style="color:' + barColor + ';">' + String(minRec) + '%</span>' +
+        '</div>' +
+        '<div class="recovery-bar"><div class="recovery-bar-fill" style="width:' + String(minRec) + '%;background:' + barColor + ';"></div></div>' +
+        '<div style="font-size:11.5px;color:' + bestTier.color + ';font-weight:700;">' + escapeHtml(tierName(bestTier)) + '</div>' +
+        '</div>';
+    }
+
+    const unitLabel = appState.profile.unit;
+    const bwDisplay = core.formatWeight(appState.profile.bodyweightKg, unitLabel) + '\u00A0' + unitLabel;
+    const hasActiveSession = Boolean(appState.activeSession);
+
+    return (
+      subtabsHtml +
+      '<main class="main-content">' +
+      // Hero Bodyrank Progress Card
+      '<button type="button" id="btn-hero-bodyrank" class="bodyrank-hero-card" data-action="go-tab" data-tab="ranks">' +
+      '<div class="bodyrank-hero-top">' +
+      '<div class="bodyrank-copy">' +
+      '<p class="bodyrank-eyebrow">' + escapeHtml(heroEyebrow) + '</p>' +
+      '<p class="bodyrank-headline">' + escapeHtml(heroHeadline) + '</p>' +
+      '</div>' +
+      '</div>' +
+      '<div class="bodyrank-progress-track">' +
+      '<div class="bodyrank-progress-fill" style="width:' + String(heroPct) + '%;"></div>' +
+      '</div>' +
+      '<div class="bodyrank-art-wrap">' +
+      bodygraph.renderHeroTwinBodygraph(snap.muscleRanks, hasRanked) +
+      '<span class="bodyrank-badge-float">' + badges.renderRankHexBadge(snap.overallTierInfo.tier.id, 46) + '</span>' +
+      '</div>' +
+      '</button>' +
+
+      // Getting Started Section
+      '<section class="section-block" aria-labelledby="sec-getting-started">' +
+      '<div class="section-heading-row"><h2 id="sec-getting-started" class="section-title">' + escapeHtml(tr('gettingStarted')) + '</h2></div>' +
+      '<div class="quest-carousel">' +
+      '<div class="quest-card is-green">' +
+      '<div>' +
+      '<h3 class="quest-card-title">' + escapeHtml(tr('welcomeQuest')) + '</h3>' +
+      '<p class="quest-card-desc">' + escapeHtml(tr('welcomeQuestDesc')) + '</p>' +
+      '</div>' +
+      '<div class="quest-card-footer">' +
+      renderQuestRingSvg(snap.welcomeQuestPct) +
+      '<button type="button" id="btn-quest-continue" class="quest-cta-btn" data-action="open-picker">' + escapeHtml(tr('continueBtn')) + '</button>' +
+      '</div>' +
+      '</div>' +
+      '<div class="quest-card is-blue">' +
+      '<div>' +
+      '<h3 class="quest-card-title">' + escapeHtml(tr('bwQuestTitle')) + ' (' + escapeHtml(bwDisplay) + ')</h3>' +
+      '<p class="quest-card-desc">' + escapeHtml(tr('bwQuestDesc')) + '</p>' +
+      '</div>' +
+      '<div class="quest-card-footer">' +
+      '<span class="tabular" style="font-size:13px;font-weight:800;color:#BAE6FD;">1-1000 LP</span>' +
+      '<button type="button" id="btn-quest-bw" class="quest-cta-btn" data-action="go-tab" data-tab="profile">' + escapeHtml(tr('calibrateBtn')) + '</button>' +
+      '</div>' +
+      '</div>' +
+      '</div>' +
+      '</section>' +
+
+      // Rank Your Workout Crimson CTA Section
+      '<section class="section-block" aria-labelledby="sec-rank-workout">' +
+      '<div class="section-heading-row"><h2 id="sec-rank-workout" class="section-title">' + escapeHtml(tr('rankYourWorkout')) + '</h2></div>' +
+      '<button type="button" id="btn-start-workout-cta" class="rank-workout-cta-card" data-action="' + (hasActiveSession ? 'go-tab' : 'open-picker') + '" data-tab="workout">' +
+      '<span class="rank-workout-left">' +
+      badges.renderDeadliftIllustration() +
+      '<span>' +
+      '<span class="rank-workout-label">' + escapeHtml(hasActiveSession ? tr('resumeWorkout') : tr('chooseExercises')) + '</span>' +
+      '<span class="rank-workout-sub">' + escapeHtml(hasActiveSession ? (String(appState.activeSession.entries.length) + ' exercises active') : ('36+ lifts • Wood → Olympian')) + '</span>' +
+      '</span>' +
+      '</span>' +
+      '<span class="rank-workout-start">' + escapeHtml(tr('startBtn')) + ' &#9654;</span>' +
+      '</button>' +
+      '</section>' +
+
+      // Recovery Zone Section
+      '<section class="section-block" aria-labelledby="sec-recovery">' +
+      '<div class="section-heading-row"><h2 id="sec-recovery" class="section-title">' + escapeHtml(tr('recoveryZone')) + '</h2></div>' +
+      '<div class="recovery-card">' + recoveryCellsHtml + '</div>' +
+      '</section>' +
+      '</main>'
+    );
+  }
+
+  function buildNextRankHintHtml(ex, currentBestRating, sampleReps, bwKg, sex, unit) {
+    const tierInfo = core.ratingToTierAndLp(currentBestRating);
+    if (!tierInfo.nextTier) {
+      return '<span>' + escapeHtml(tr('maxTierReached')) + '</span><span style="color:#FDE047;font-weight:800;">900+ LP</span>';
+    }
+    const targetFloor = tierInfo.nextTier.index === 1 ? 200 : tierInfo.nextTier.min;
+    const nextTierObj = tierInfo.nextTier.index === 1 ? core.RANK_TIERS[2] : tierInfo.nextTier;
+    const solved = core.solveWeightForRating(ex, targetFloor, sampleReps || 8, bwKg, sex, unit);
+    if (!solved) return '';
+    const loadLabel = ex.isBodyweight && solved.weightInUnit === 0
+      ? ('BW × ' + String(solved.reps))
+      : (String(solved.weightInUnit) + '\u00A0' + unit + ' × ' + String(solved.reps));
+    return (
+      '<span>' + escapeHtml(tr('nextRankTargetPrefix')) + ' <strong style="color:' + nextTierObj.color + ';">' +
+      escapeHtml(tierName(nextTierObj)) + '</strong>:</span>' +
+      '<strong class="tabular" style="color:#F8FAFC;">' + escapeHtml(loadLabel) + '</strong>'
+    );
+  }
+
+  function renderSetRankBadgeInner(setItem, ex) {
+    if (setItem.setType === 'warmup') {
+      return '<span style="color:#FBBF24;">WARM</span><span style="color:#94A3B8;font-size:10px;">0 LP</span>';
+    }
+    const ev = core.evaluateSetStrength(setItem, ex, appState.profile.bodyweightKg, appState.profile.sex);
+    if (!ev.valid) {
+      return '<span style="color:#64748B;">—</span>';
+    }
+    return (
+      '<span style="color:' + ev.tier.color + ';">' + escapeHtml(ev.tier.nameEn) + '</span>' +
+      '<span class="tabular" style="color:#CBD5E1;font-size:10.5px;">' + String(ev.rating) + ' • ' + String(ev.lp) + 'LP</span>'
+    );
+  }
+
+  function renderWorkoutTab(snap) {
+    const unit = appState.profile.unit;
+    if (!appState.activeSession) {
+      let presetsHtml = '';
+      for (let i = 0; i < catalog.WORKOUT_PRESETS.length; i += 1) {
+        const p = catalog.WORKOUT_PRESETS[i];
+        const title = appState.lang === 'vi' ? p.nameVi : p.nameEn;
+        const subNames = p.exerciseIds.map(function (id) {
+          return catalog.EXERCISE_BY_ID[id] ? catalog.EXERCISE_BY_ID[id].nameEn : id;
+        }).join(' • ');
+        presetsHtml +=
+          '<div class="exercise-log-card">' +
+          '<div>' +
+          '<h3 class="exercise-log-title">' + escapeHtml(title) + '</h3>' +
+          '<p class="exercise-cue">' + escapeHtml(subNames) + '</p>' +
+          '</div>' +
+          '<button type="button" class="quest-cta-btn" style="align-self:flex-start;background:#2563EB;" data-action="start-preset" data-preset="' + p.id + '">' +
+          escapeHtml(tr('startRankedSession')) + ' &#9654;' +
+          '</button>' +
+          '</div>';
+      }
+
+      return (
+        '<main class="main-content">' +
+        '<button type="button" class="rank-workout-cta-card" data-action="open-picker">' +
+        '<span class="rank-workout-left">' +
+        badges.renderDeadliftIllustration() +
+        '<span><span class="rank-workout-label">' + escapeHtml(tr('chooseExercises')) + '</span>' +
+        '<span class="rank-workout-sub">' + escapeHtml(tr('startEmptyOrPick')) + '</span></span>' +
+        '</span>' +
+        '<span class="rank-workout-start">' + escapeHtml(tr('startBtn')) + ' &#9654;</span>' +
+        '</button>' +
+        '<section class="section-block">' +
+        '<h2 class="section-title">' + escapeHtml(tr('quickPresets')) + '</h2>' +
+        presetsHtml +
+        '</section>' +
+        '</main>'
+      );
+    }
+
+    const now = Date.now();
+    const elapsedSec = Math.max(0, Math.floor((now - appState.activeSession.startedAtMs) / 1000));
+    const isResting = ui.restEndAtMs > now;
+    const restText = isResting
+      ? (tr('restTimer') + ' ' + formatDuration(Math.ceil((ui.restEndAtMs - now) / 1000)))
+      : (tr('restTimer') + ' ' + String(appState.profile.restTimerSec) + 's');
+
+    const bwInUnit = core.formatWeight(appState.profile.bodyweightKg, unit);
+
+    let entriesHtml = '';
+    for (let i = 0; i < appState.activeSession.entries.length; i += 1) {
+      const entry = appState.activeSession.entries[i];
+      const ex = catalog.EXERCISE_BY_ID[entry.exerciseId];
+      if (!ex) continue;
+      const histStat = snap.exerciseStats[ex.id];
+
+      // Determine best rating between historical and current session working sets
+      let liveBestRating = histStat ? histStat.bestRating : 0;
+      let refReps = 8;
+      for (let sIdx = 0; sIdx < entry.sets.length; sIdx += 1) {
+        const s = entry.sets[sIdx];
+        if (s.reps >= 1) refReps = s.reps;
+        const ev = core.evaluateSetStrength(s, ex, appState.profile.bodyweightKg, appState.profile.sex);
+        if (ev.valid && ev.rating > liveBestRating) liveBestRating = ev.rating;
+      }
+
+      const currentTierInfo = core.ratingToTierAndLp(liveBestRating);
+
+      let setsHtml = '';
+      let workCounter = 0;
+      for (let sIdx = 0; sIdx < entry.sets.length; sIdx += 1) {
+        const s = entry.sets[sIdx];
+        let badgeLabel = '';
+        let typeCls = 'set-type-btn';
+        if (s.setType === 'warmup') {
+          badgeLabel = 'W';
+          typeCls += ' is-warmup';
+        } else if (s.setType === 'dropset') {
+          badgeLabel = 'D';
+          typeCls += ' is-dropset';
+        } else {
+          workCounter += 1;
+          badgeLabel = String(workCounter);
+        }
+
+        const wDisplay = core.formatWeight(s.weightKg, unit);
+        setsHtml +=
+          '<div class="set-row' + (s.completed ? ' is-completed' : '') + '" data-set-row="' + s.id + '">' +
+          '<button type="button" class="' + typeCls + '" data-action="cycle-set-type" data-ex="' + ex.id + '" data-set="' + s.id + '" title="Tap to switch Normal / Warmup (W) / Dropset (D)">' +
+          badgeLabel +
+          '</button>' +
+          '<input type="text" inputmode="decimal" class="set-input tabular" aria-label="Weight in ' + unit + '" data-set-input="weight" data-ex="' + ex.id + '" data-set="' + s.id + '" value="' + escapeHtml(wDisplay) + '">' +
+          '<input type="text" inputmode="numeric" class="set-input tabular" aria-label="Reps" data-set-input="reps" data-ex="' + ex.id + '" data-set="' + s.id + '" value="' + String(s.reps) + '">' +
+          '<div class="live-rank-pill" id="rank-pill-' + s.id + '">' +
+          renderSetRankBadgeInner(s, ex) +
+          '</div>' +
+          '<button type="button" class="set-check-btn' + (s.completed ? ' is-checked' : '') + '" data-action="toggle-set-done" data-ex="' + ex.id + '" data-set="' + s.id + '" aria-label="Complete set">' +
+          '&#10003;' +
+          '</button>' +
+          '</div>';
+      }
+
+      const prevHint = histStat && histStat.lastSet
+        ? (tr('prevCol') + ': ' + core.formatWeight(histStat.lastSet.weightKg, unit) + unit + ' × ' + String(histStat.lastSet.reps))
+        : '';
+
+      entriesHtml +=
+        '<section class="exercise-log-card" data-ex-card="' + ex.id + '">' +
+        '<div class="exercise-log-head">' +
+        '<div>' +
+        '<h3 class="exercise-log-title">' + escapeHtml(exName(ex)) + '</h3>' +
+        '<p class="exercise-cue">' + escapeHtml(exCue(ex)) + (prevHint ? (' • ' + escapeHtml(prevHint)) : '') + '</p>' +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">' +
+        badges.renderRankHexBadge(currentTierInfo.tier.id, 38) +
+        '</div>' +
+        '</div>' +
+        '<div class="next-rank-banner" id="next-banner-' + ex.id + '">' +
+        buildNextRankHintHtml(ex, liveBestRating, refReps, appState.profile.bodyweightKg, appState.profile.sex, unit) +
+        '</div>' +
+        '<div class="set-grid-header">' +
+        '<span>' + escapeHtml(tr('setCol')) + '</span>' +
+        '<span>' + (unit === 'lbs' ? 'LBS' : 'KG') + '</span>' +
+        '<span>' + escapeHtml(tr('repsCol')) + '</span>' +
+        '<span>' + escapeHtml(tr('liveRankCol')) + '</span>' +
+        '<span>&#10003;</span>' +
+        '</div>' +
+        setsHtml +
+        '<div class="exercise-card-actions">' +
+        '<button type="button" class="secondary-btn" data-action="add-set" data-ex="' + ex.id + '">' + escapeHtml(tr('addSetBtn')) + '</button>' +
+        (entry.sets.length > 1
+          ? '<button type="button" class="danger-text-btn" data-action="delete-last-set" data-ex="' + ex.id + '">&minus; Set</button>'
+          : '<button type="button" class="danger-text-btn" data-action="remove-ex-session" data-ex="' + ex.id + '">&times;</button>') +
+        '</div>' +
+        '</section>';
+    }
+
+    return (
+      '<main class="main-content">' +
+      '<div class="logger-header-card">' +
+      '<div class="logger-top-row">' +
+      '<button type="button" class="timer-pill' + (isResting ? ' is-resting' : '') + '" data-action="start-or-skip-rest">' +
+      '&#9201; <span id="live-rest-countdown">' + escapeHtml(restText) + '</span>' +
+      '</button>' +
+      '<span class="timer-pill tabular">&#9679; <span id="live-session-duration">' + formatDuration(elapsedSec) + '</span></span>' +
+      '<button type="button" id="btn-post-workout" class="post-workout-btn" data-action="post-workout">' + escapeHtml(tr('finishPostBtn')) + '</button>' +
+      '</div>' +
+      '<div class="bw-inline-bar">' +
+      '<span style="font-size:13px;font-weight:700;color:#CBD5E1;">' + escapeHtml(tr('bodyweightPill')) + ' (' + escapeHtml(appState.profile.sex === 'female' ? tr('sexFemale') : tr('sexMale')) + '):</span>' +
+      '<div class="bw-inline-controls">' +
+      '<input type="text" inputmode="decimal" id="logger-bw-input" class="compact-num-input tabular" aria-label="Bodyweight" value="' + escapeHtml(bwInUnit) + '">' +
+      '<button type="button" id="btn-unit-toggle" class="unit-switch-btn" data-action="toggle-unit">' + escapeHtml(unit) + '</button>' +
+      '</div>' +
+      '</div>' +
+      '</div>' +
+      entriesHtml +
+      '<div style="display:flex;gap:10px;flex-wrap:wrap;">' +
+      '<button type="button" class="secondary-btn" style="flex:1;" data-action="open-picker-add">' + escapeHtml(tr('addExerciseBtn')) + '</button>' +
+      '<button type="button" class="danger-text-btn" data-action="cancel-workout">' + escapeHtml(tr('cancelWorkoutBtn')) + '</button>' +
+      '</div>' +
+      '</main>'
+    );
+  }
+
+  function renderRanksTab(snap) {
+    const unit = appState.profile.unit;
+    const selMuscle = catalog.MUSCLE_BY_ID[ui.selectedMuscleId] || catalog.MUSCLE_GROUPS[0];
+    const selRank = snap.muscleRanks[selMuscle.id];
+    const selTier = selRank.tierInfo.tier;
+
+    // Instant 1RM & Rank Calculator evaluation
+    const calcEx = catalog.EXERCISE_BY_ID[ui.calcExerciseId] || catalog.EXERCISES[0];
+    const calcWNum = storage.parseDecimalInput(ui.calcWeightText);
+    const calcRNum = storage.parseDecimalInput(ui.calcRepsText);
+    const calcWeightKg = Number.isFinite(calcWNum) ? core.unitToKg(calcWNum, unit) : 0;
+    const calcEval = core.evaluateSetStrength(
+      { weightKg: calcWeightKg, reps: Number.isFinite(calcRNum) ? calcRNum : 0, setType: 'working' },
+      calcEx,
+      appState.profile.bodyweightKg,
+      appState.profile.sex
+    );
+
+    let exOptionsHtml = '';
+    for (let i = 0; i < catalog.EXERCISES.length; i += 1) {
+      const ex = catalog.EXERCISES[i];
+      exOptionsHtml +=
+        '<option value="' + ex.id + '"' + (ex.id === calcEx.id ? ' selected' : '') + '>' +
+        escapeHtml(exName(ex)) +
+        '</option>';
+    }
+
+    let muscleRowsHtml = '';
+    for (let i = 0; i < catalog.MUSCLE_GROUPS.length; i += 1) {
+      const m = catalog.MUSCLE_GROUPS[i];
+      const mr = snap.muscleRanks[m.id];
+      const tier = mr.tierInfo.tier;
+      const topEx = mr.topExerciseId ? catalog.EXERCISE_BY_ID[mr.topExerciseId] : null;
+      muscleRowsHtml +=
+        '<button type="button" class="muscle-row-card' + (ui.selectedMuscleId === m.id ? ' is-selected' : '') + '" data-action="select-muscle" data-muscle="' + m.id + '" data-view="' + m.view + '">' +
+        '<span style="display:flex;align-items:center;gap:10px;">' +
+        badges.renderRankHexBadge(tier.id, 38) +
+        '<span>' +
+        '<strong style="display:block;font-size:14.5px;color:#FFFFFF;">' + escapeHtml(muscleName(m)) + '</strong>' +
+        '<span style="font-size:12px;color:#94A3B8;">' +
+        (topEx ? escapeHtml(exName(topEx)) : escapeHtml(tr('noRankedLiftsYet'))) +
+        '</span>' +
+        '</span>' +
+        '</span>' +
+        '<span class="tabular" style="text-align:right;">' +
+        '<strong style="display:block;font-size:13.5px;color:' + tier.color + ';">' + escapeHtml(tierName(tier)) + '</strong>' +
+        '<span style="font-size:11.5px;color:#CBD5E1;">' + (mr.rating > 0 ? (String(mr.rating) + ' • ' + String(mr.tierInfo.lp) + ' LP') : '0 LP') + '</span>' +
+        '</span>' +
+        '</button>';
+    }
+
+    let ladderCellsHtml = '';
+    for (let i = 1; i < core.RANK_TIERS.length; i += 1) {
+      const tObj = core.RANK_TIERS[i];
+      const rangeStr = tObj.id === 'olympian' ? '900+' : (String(tObj.min) + '–' + String(tObj.max));
+      ladderCellsHtml +=
+        '<div class="tier-ladder-cell">' +
+        badges.renderRankHexBadge(tObj.id, 34) +
+        '<strong style="font-size:12px;color:' + tObj.color + ';">' + escapeHtml(tObj.nameEn) + '</strong>' +
+        '<span class="tabular" style="font-size:11px;color:#94A3B8;">' + rangeStr + '</span>' +
+        '</div>';
+    }
+
+    return (
+      '<main class="main-content">' +
+      // Interactive Bodygraph Stage
+      '<section class="ranks-stage-card">' +
+      '<div style="width:100%;display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+      '<div>' +
+      '<div style="font-size:12px;color:#94A3B8;font-weight:700;">' + escapeHtml(tr('overallBodyrankLabel')) + '</div>' +
+      '<div class="tabular" style="font-size:18px;font-weight:800;color:' + snap.overallTierInfo.tier.color + ';">' +
+      escapeHtml(tierName(snap.overallTierInfo.tier)) +
+      (snap.overallRating > 0 ? (' • ' + String(snap.overallRating) + ' (' + String(snap.overallTierInfo.lp) + ' LP)') : '') +
+      '</div>' +
+      '</div>' +
+      '<div class="segmented-toggle">' +
+      '<button type="button" class="segmented-btn' + (ui.ranksViewMode === 'front' ? ' is-active' : '') + '" data-action="set-bodygraph-view" data-view="front">' + escapeHtml(tr('frontView')) + '</button>' +
+      '<button type="button" class="segmented-btn' + (ui.ranksViewMode === 'back' ? ' is-active' : '') + '" data-action="set-bodygraph-view" data-view="back">' + escapeHtml(tr('backView')) + '</button>' +
+      '</div>' +
+      '</div>' +
+
+      '<div class="bodygraph-stage-wrap">' +
+      bodygraph.renderInteractiveBodygraph(snap.muscleRanks, ui.ranksViewMode, ui.selectedMuscleId) +
+      '</div>' +
+
+      '<div class="muscle-Detail-strip">' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+      badges.renderRankHexBadge(selTier.id, 42) +
+      '<div>' +
+      '<div style="font-size:15px;font-weight:800;color:#FFFFFF;">' + escapeHtml(muscleName(selMuscle)) + '</div>' +
+      '<div class="tabular" style="font-size:12.5px;color:' + selTier.color + ';font-weight:700;">' +
+      escapeHtml(tierName(selTier)) + ' • ' + String(selRank.rating) + ' pts (' + String(selRank.tierInfo.lp) + ' LP)' +
+      '</div>' +
+      '</div>' +
+      '</div>' +
+      '<button type="button" class="quest-cta-btn" style="background:#2563EB;padding:0 14px;font-size:13px;" data-action="train-muscle" data-group="' + selMuscle.group + '">' +
+      escapeHtml(tr('trainMuscleBtn')) +
+      '</button>' +
+      '</div>' +
+      '</section>' +
+
+      // Live 1RM & Rank Calculator (Liftoff Free Tool)
+      '<section class="calc-card">' +
+      '<div>' +
+      '<h2 class="section-title" style="font-size:16.5px;">' + escapeHtml(tr('rankCalculatorTitle')) + '</h2>' +
+      '<p class="exercise-cue">' + escapeHtml(tr('rankCalculatorSub')) + '</p>' +
+      '</div>' +
+      '<select id="calc-ex-select" class="calc-select" aria-label="Calculator Exercise">' + exOptionsHtml + '</select>' +
+      '<div class="calc-inputs-row">' +
+      '<input type="text" inputmode="decimal" id="calc-weight-input" class="set-input tabular" aria-label="Calculator Weight (' + unit + ')" placeholder="' + unit + '" value="' + escapeHtml(ui.calcWeightText) + '">' +
+      '<input type="text" inputmode="numeric" id="calc-reps-input" class="set-input tabular" aria-label="Calculator Reps" placeholder="Reps" value="' + escapeHtml(ui.calcRepsText) + '">' +
+      '<button type="button" class="secondary-btn" data-action="run-calc">' + escapeHtml(tr('calcCheckBtn')) + '</button>' +
+      '</div>' +
+      (calcEval.valid
+        ? ('<div class="muscle-Detail-strip">' +
+           '<div style="display:flex;align-items:center;gap:10px;">' +
+           badges.renderRankHexBadge(calcEval.tier.id, 40) +
+           '<div>' +
+           '<strong style="font-size:14.5px;color:' + calcEval.tier.color + ';">' + escapeHtml(tierName(calcEval.tier)) + ' (' + String(calcEval.lp) + ' LP)</strong>' +
+           '<div class="tabular" style="font-size:12.5px;color:#CBD5E1;">1RM ≈ ' + core.formatWeight(calcEval.e1rmKg, unit) + '\u00A0' + unit + ' • Score ' + String(calcEval.rating) + '/1000</div>' +
+           '</div></div></div>')
+        : '') +
+      '</section>' +
+
+      // 15 Muscle Ranks Breakdown
+      '<section class="section-block">' +
+      '<h2 class="section-title">' + escapeHtml(tr('allMuscles')) + '</h2>' +
+      '<div class="muscle-grid-list">' + muscleRowsHtml + '</div>' +
+      '</section>' +
+
+      // 9-Tier Reference Ladder
+      '<section class="section-block">' +
+      '<h2 class="section-title">' + escapeHtml(tr('tierLadderTitle')) + '</h2>' +
+      '<div class="tier-ladder-grid">' + ladderCellsHtml + '</div>' +
+      '</section>' +
+      '</main>'
+    );
+  }
+
+  function renderFriendsLeaderboardInner(snap) {
+    const rivals = [
+      { name: 'Minh Khoa', rating: 645, streak: 19, isUser: false },
+      { name: 'Hải Đăng', rating: 520, streak: 11, isUser: false },
+      { name: 'Tuấn Kiệt', rating: 418, streak: 7, isUser: false },
+      { name: 'Gia Huy', rating: 312, streak: 4, isUser: false },
+      { name: 'Bảo Nam', rating: 215, streak: 2, isUser: false },
+      { name: appState.profile.name, rating: snap.overallRating, streak: snap.streakDays, isUser: true }
+    ];
+    rivals.sort(function (a, b) { return b.rating - a.rating; });
+
+    let rowsHtml = '';
+    for (let i = 0; i < rivals.length; i += 1) {
+      const r = rivals[i];
+      const tInfo = core.ratingToTierAndLp(r.rating);
+      rowsHtml +=
+        '<div class="muscle-row-card' + (r.isUser ? ' is-selected' : '') + '">' +
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<span class="tabular" style="width:22px;font-weight:800;color:#94A3B8;">#' + String(i + 1) + '</span>' +
+        badges.renderRankHexBadge(tInfo.tier.id, 38) +
+        '<div>' +
+        '<strong style="font-size:14.5px;color:#FFFFFF;">' + escapeHtml(r.name) +
+        (r.isUser ? (' <span class="pr-tag" style="margin-left:4px;">' + escapeHtml(tr('youTag')) + '</span>') : '') +
+        '</strong>' +
+        '<div class="tabular" style="font-size:12px;color:#94A3B8;">&#128293; ' + String(r.streak) + 'd streak</div>' +
+        '</div>' +
+        '</div>' +
+        '<div class="tabular" style="text-align:right;">' +
+        '<strong style="display:block;font-size:14px;color:' + tInfo.tier.color + ';">' + escapeHtml(tInfo.tier.nameEn) + '</strong>' +
+        '<span style="font-size:12px;color:#CBD5E1;">' + String(r.rating) + ' pts</span>' +
+        '</div>' +
+        '</div>';
+    }
+
+    return (
+      '<section class="section-block">' +
+      '<div><h2 class="section-title">' + escapeHtml(tr('leaderboardTitle')) + '</h2>' +
+      '<p class="exercise-cue">' + escapeHtml(tr('leaderboardSub')) + '</p></div>' +
+      '<div class="muscle-grid-list">' + rowsHtml + '</div>' +
+      '</section>'
+    );
+  }
+
+  function renderDiscoveryFeedInner(snap) {
+    const posts = [
+      { lifter: 'Minh Khoa', lift: 'Barbell Bench Press', load: '95 kg × 5', tierId: 'diamond', rating: 618 },
+      { lifter: 'Thảo Vy', lift: 'Barbell Hip Thrust', load: '110 kg × 8', tierId: 'champion', rating: 724 },
+      { lifter: 'Hải Đăng', lift: 'Barbell Back Squat', load: '120 kg × 6', tierId: 'platinum', rating: 554 }
+    ];
+    let html = '';
+    if (appState.workouts.length > 0) {
+      const latest = appState.workouts[appState.workouts.length - 1];
+      html +=
+        '<div class="exercise-log-card" style="border-color:#3898FF;">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<strong>' + escapeHtml(appState.profile.name) + ' • ' + escapeHtml(tr('youTag')) + '</strong>' +
+        badges.renderRankHexBadge(snap.overallTierInfo.tier.id, 34) +
+        '</div>' +
+        '<p class="exercise-cue" style="margin:0;">Posted ' + String(latest.entries.length) + ' ranked exercises • Bodyrank ' + String(snap.overallRating) + '</p>' +
+        '</div>';
+    }
+    for (let i = 0; i < posts.length; i += 1) {
+      const p = posts[i];
+      html +=
+        '<div class="exercise-log-card">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;">' +
+        '<strong>' + escapeHtml(p.lifter) + '</strong>' +
+        badges.renderRankHexBadge(p.tierId, 34) +
+        '</div>' +
+        '<div class="tabular" style="font-size:14px;color:#E2E8F0;">' + escapeHtml(p.lift) + ' — <strong>' + escapeHtml(p.load) + '</strong> (' + String(p.rating) + ' pts)</div>' +
+        '</div>';
+    }
+    return '<section class="section-block"><h2 class="section-title">' + escapeHtml(tr('discovery')) + '</h2>' + html + '</section>';
+  }
+
+  function renderNutritionTab() {
+    const meals = appState.nutritionLog.meals || [];
+    let kcalSum = 0;
+    let proSum = 0;
+    for (let i = 0; i < meals.length; i += 1) {
+      kcalSum += meals[i].kcal;
+      proSum += meals[i].proteinG;
+    }
+    const kcalPct = Math.min(100, Math.round((kcalSum / appState.nutritionLog.caloriesTarget) * 100));
+    const proPct = Math.min(100, Math.round((proSum / appState.nutritionLog.proteinTargetG) * 100));
+
+    let mealRows = '';
+    for (let i = meals.length - 1; i >= 0; i -= 1) {
+      const m = meals[i];
+      mealRows +=
+        '<div class="muscle-row-card">' +
+        '<div><strong style="font-size:14.5px;">' + escapeHtml(m.name) + '</strong>' +
+        '<div class="tabular" style="font-size:12.5px;color:#94A3B8;">' + String(m.kcal) + ' kcal • ' + String(m.proteinG) + '\u00A0g protein</div></div>' +
+        '<button type="button" class="danger-text-btn" data-action="delete-meal" data-meal="' + m.id + '">&times;</button>' +
+        '</div>';
+    }
+
+    return (
+      '<main class="main-content">' +
+      '<section class="calc-card">' +
+      '<h2 class="section-title">' + escapeHtml(tr('nutritionTitle')) + '</h2>' +
+      '<p class="exercise-cue">' + escapeHtml(tr('nutritionSub')) + '</p>' +
+      '<div class="recovery-item">' +
+      '<div class="recovery-top"><span>' + escapeHtml(tr('caloriesLabel')) + '</span><span class="tabular">' + String(kcalSum) + ' / ' + String(appState.nutritionLog.caloriesTarget) + ' kcal</span></div>' +
+      '<div class="recovery-bar"><div class="recovery-bar-fill" style="width:' + String(kcalPct) + '%;background:#38BDF8;"></div></div>' +
+      '</div>' +
+      '<div class="recovery-item">' +
+      '<div class="recovery-top"><span>' + escapeHtml(tr('proteinLabel')) + '</span><span class="tabular">' + String(proSum) + ' / ' + String(appState.nutritionLog.proteinTargetG) + '\u00A0g</span></div>' +
+      '<div class="recovery-bar"><div class="recovery-bar-fill" style="width:' + String(proPct) + '%;background:#4ADE80;"></div></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;padding-top:4px;">' +
+      '<button type="button" class="secondary-btn" data-action="quick-meal" data-name="Whey Shake + Banana" data-kcal="240" data-pro="28">+ Whey (28g P)</button>' +
+      '<button type="button" class="secondary-btn" data-action="quick-meal" data-name="Chicken Rice Bowl" data-kcal="620" data-pro="48">+ Chicken Rice (48g P)</button>' +
+      '<button type="button" class="secondary-btn" data-action="quick-meal" data-name="Eggs & Oats" data-kcal="430" data-pro="26">+ Eggs & Oats (26g P)</button>' +
+      '</div>' +
+      '</section>' +
+      (mealRows ? ('<div class="muscle-grid-list">' + mealRows + '</div>') : '') +
+      '</main>'
+    );
+  }
+
+  function renderProfileTab(snap) {
+    const unit = appState.profile.unit;
+    const bwDisp = core.formatWeight(appState.profile.bodyweightKg, unit);
+
+    let historyHtml = '';
+    for (let i = appState.workouts.length - 1; i >= 0; i -= 1) {
+      const w = appState.workouts[i];
+      const dateStr = w.completedAtMs > 0 ? new Date(w.completedAtMs).toLocaleDateString() : '';
+      const exSummaries = w.entries.map(function (e) {
+        const ex = catalog.EXERCISE_BY_ID[e.exerciseId];
+        return (ex ? ex.nameEn : e.exerciseId) + ' (' + String(e.sets.length) + ' sets)';
+      }).join(' • ');
+
+      historyHtml +=
+        '<div class="exercise-log-card">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;">' +
+        '<div><strong style="font-size:15px;">' + escapeHtml(w.title || ('Ranked Session #' + String(i + 1))) + '</strong>' +
+        '<div class="tabular" style="font-size:12px;color:#94A3B8;">' + escapeHtml(dateStr) + ' • BW ' + core.formatWeight(w.bodyweightKg, unit) + '\u00A0' + unit + '</div></div>' +
+        '<button type="button" class="danger-text-btn" data-action="delete-workout" data-wk="' + w.id + '">&#128465;</button>' +
+        '</div>' +
+        '<div style="font-size:13px;color:#CBD5E1;">' + escapeHtml(exSummaries) + '</div>' +
+        '</div>';
+    }
+
+    return (
+      '<main class="main-content">' +
+      '<section class="calc-card">' +
+      '<h2 class="section-title">' + escapeHtml(tr('profileSettingsTitle')) + '</h2>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">' +
+      '<div>' +
+      '<label for="prof-bw-input" style="font-size:12.5px;color:#94A3B8;display:block;margin-bottom:4px;">' + escapeHtml(tr('bodyweightPill')) + ' (' + unit + ')</label>' +
+      '<input type="text" inputmode="decimal" id="prof-bw-input" class="set-input tabular" value="' + escapeHtml(bwDisp) + '">' +
+      '</div>' +
+      '<div>' +
+      '<label for="prof-rest-input" style="font-size:12.5px;color:#94A3B8;display:block;margin-bottom:4px;">Rest Timer (s)</label>' +
+      '<input type="text" inputmode="numeric" id="prof-rest-input" class="set-input tabular" value="' + String(appState.profile.restTimerSec) + '">' +
+      '</div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+      '<button type="button" class="segmented-btn' + (appState.profile.sex === 'male' ? ' is-active' : '') + '" style="border:1px solid #333B63;" data-action="set-sex" data-sex="male">' + escapeHtml(tr('sexMale')) + '</button>' +
+      '<button type="button" class="segmented-btn' + (appState.profile.sex === 'female' ? ' is-active' : '') + '" style="border:1px solid #333B63;" data-action="set-sex" data-sex="female">' + escapeHtml(tr('sexFemale')) + '</button>' +
+      '<button type="button" class="unit-switch-btn" data-action="toggle-unit">' + unit.toUpperCase() + '</button>' +
+      '</div>' +
+      '<button type="button" id="btn-save-profile" class="post-workout-btn" data-action="save-profile">' + escapeHtml(tr('saveProfileBtn')) + '</button>' +
+      '</section>' +
+
+      '<section class="calc-card">' +
+      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;text-align:center;">' +
+      '<div class="recovery-item"><span style="font-size:11.5px;color:#94A3B8;">Workouts</span><strong class="tabular" style="font-size:18px;">' + String(snap.totalWorkouts) + '</strong></div>' +
+      '<div class="recovery-item"><span style="font-size:11.5px;color:#94A3B8;">Ranked Sets</span><strong class="tabular" style="font-size:18px;">' + String(snap.totalWorkingSets) + '</strong></div>' +
+      '<div class="recovery-item"><span style="font-size:11.5px;color:#94A3B8;">Bodyrank</span><strong class="tabular" style="font-size:18px;color:' + snap.overallTierInfo.tier.color + ';">' + String(snap.overallRating) + '</strong></div>' +
+      '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+      '<button type="button" id="btn-load-demo" class="secondary-btn" data-action="load-demo">' + escapeHtml(tr('loadDemoBtn')) + '</button>' +
+      '<button type="button" class="secondary-btn" data-action="export-json">' + escapeHtml(tr('exportJsonBtn')) + '</button>' +
+      '<button type="button" class="danger-text-btn" data-action="reset-all">' + escapeHtml(tr('resetDataBtn')) + '</button>' +
+      '</div>' +
+      '</section>' +
+
+      '<section class="section-block">' +
+      '<h2 class="section-title">' + escapeHtml(tr('workoutHistoryTitle')) + '</h2>' +
+      (historyHtml || ('<p class="exercise-cue">' + escapeHtml(tr('noRankedLiftsYet')) + '</p>')) +
+      '</section>' +
+      '</main>'
+    );
+  }
+
+  function renderBottomDock() {
+    const dockEl = document.getElementById('bottom-dock');
+    if (!dockEl) return;
+    const tabs = [
+      { id: 'workout', labelKey: 'navWorkout' },
+      { id: 'home', labelKey: 'navHome' },
+      { id: 'ranks', labelKey: 'navRanks' },
+      { id: 'nutrition', labelKey: 'navNutrition' },
+      { id: 'friends', labelKey: 'navFriends' },
+      { id: 'profile', labelKey: 'navProfile' }
+    ];
+
+    let html = '';
+    for (let i = 0; i < tabs.length; i += 1) {
+      const item = tabs[i];
+      const active = ui.activeTab === item.id;
+      html +=
+        '<button type="button" id="nav-tab-' + item.id + '" class="dock-tab-btn' + (active ? ' is-active' : '') + '" data-action="go-tab" data-tab="' + item.id + '">' +
+        badges.renderNavIcon(item.id, active) +
+        '<span>' + escapeHtml(tr(item.labelKey)) + '</span>' +
+        '</button>';
+    }
+    dockEl.innerHTML = html;
+  }
+
+  function renderPickerModal(snap) {
+    const modalEl = document.getElementById('picker-modal');
+    if (!modalEl) return;
+    if (!ui.pickerOpen) {
+      modalEl.hidden = true;
+      modalEl.innerHTML = '';
+      return;
+    }
+    modalEl.hidden = false;
+
+    let chipsHtml = '';
+    for (let i = 0; i < catalog.CATEGORY_FILTERS.length; i += 1) {
+      const cat = catalog.CATEGORY_FILTERS[i];
+      const lbl = appState.lang === 'vi' ? cat.nameVi : cat.nameEn;
+      chipsHtml +=
+        '<button type="button" class="filter-chip' + (ui.pickerCategory === cat.id ? ' is-active' : '') + '" data-action="picker-cat" data-cat="' + cat.id + '">' +
+        escapeHtml(lbl) +
+        '</button>';
+    }
+
+    const q = ui.pickerSearch.trim().toLowerCase();
+    let listHtml = '';
+    for (let i = 0; i < catalog.EXERCISES.length; i += 1) {
+      const ex = catalog.EXERCISES[i];
+      if (ui.pickerCategory !== 'all' && ex.category !== ui.pickerCategory) continue;
+      if (q) {
+        const hay = (ex.nameEn + ' ' + ex.nameVi + ' ' + ex.equipment).toLowerCase();
+        if (hay.indexOf(q) === -1) continue;
+      }
+      const picked = ui.pickerSelectedIds.indexOf(ex.id) !== -1;
+      const st = snap.exerciseStats[ex.id];
+      const tier = st ? st.tierInfo.tier : core.RANK_TIERS[0];
+
+      listHtml +=
+        '<button type="button" class="picker-exercise-btn' + (picked ? ' is-picked' : '') + '" data-action="toggle-pick-ex" data-ex="' + ex.id + '">' +
+        '<span style="display:flex;align-items:center;gap:10px;">' +
+        badges.renderRankHexBadge(tier.id, 36) +
+        '<span>' +
+        '<strong style="display:block;font-size:14.5px;color:#FFFFFF;">' + escapeHtml(exName(ex)) + '</strong>' +
+        '<span style="font-size:12px;color:#94A3B8;">' + escapeHtml(tierName(tier)) + (st && st.bestRating > 0 ? (' • ' + String(st.bestRating) + ' pts') : '') + '</span>' +
+        '</span>' +
+        '</span>' +
+        '<span style="font-size:18px;font-weight:900;color:' + (picked ? '#38BDF8' : '#64748B') + ';">' + (picked ? '&#10003;' : '+') + '</span>' +
+        '</button>';
+    }
+
+    const confirmText = ui.pickerAddingToActive
+      ? (tr('addSelectedToWorkout') + ' (' + String(ui.pickerSelectedIds.length) + ')')
+      : (tr('startRankedSession') + ' (' + String(ui.pickerSelectedIds.length) + ')');
+
+    modalEl.innerHTML =
+      '<div class="modal-sheet" role="dialog" aria-modal="true" aria-label="Choose Ranked Exercises">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">' +
+      '<h2 class="section-title">' + escapeHtml(tr('chooseExercises')) + '</h2>' +
+      '<button type="button" class="icon-action-btn" data-action="close-picker" aria-label="Close">&times;</button>' +
+      '</div>' +
+      '<input type="search" id="picker-search-input" class="search-input" placeholder="' + escapeHtml(tr('searchExercisesPlaceholder')) + '" value="' + escapeHtml(ui.pickerSearch) + '">' +
+      '<div class="filter-chips-row">' + chipsHtml + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;max-height:46dvh;overflow-y:auto;">' + listHtml + '</div>' +
+      '<button type="button" id="btn-confirm-picker" class="post-workout-btn" style="width:100%;min-height:48px;font-size:15.5px;" data-action="confirm-picker">' +
+      escapeHtml(confirmText) +
+      '</button>' +
+      '</div>';
+  }
+
+  function renderCelebrationModal() {
+    const modalEl = document.getElementById('celebration-modal');
+    if (!modalEl) return;
+    const cel = ui.celebrationData;
+    if (!cel) {
+      modalEl.hidden = true;
+      modalEl.innerHTML = '';
+      return;
+    }
+    modalEl.hidden = false;
+
+    const unit = appState.profile.unit;
+    let exCardsHtml = '';
+    for (let i = 0; i < cel.exerciseRankUps.length; i += 1) {
+      const item = cel.exerciseRankUps[i];
+      const ex = catalog.EXERCISE_BY_ID[item.exerciseId];
+      exCardsHtml +=
+        '<div class="muscle-row-card">' +
+        '<div style="display:flex;align-items:center;gap:10px;">' +
+        badges.renderRankHexBadge(item.newTier.id, 42) +
+        '<div>' +
+        '<strong style="font-size:14.5px;color:#FFFFFF;">' + escapeHtml(exName(ex)) + '</strong>' +
+        '<div class="tabular" style="font-size:12px;color:#CBD5E1;">1RM ' + core.formatWeight(item.session1RMKg, unit) + '\u00A0' + unit + ' • ' + String(item.newLp) + ' LP</div>' +
+        '<div style="display:flex;gap:4px;margin-top:3px;">' +
+        (item.tierUpgraded ? ('<span class="pr-tag" style="color:#4ADE80;border-color:#4ADE80;background:rgba(74,222,128,0.15);">' + escapeHtml(tr('rankUpBadge')) + '</span>') : '') +
+        (item.isNewPR ? ('<span class="pr-tag">' + escapeHtml(tr('newPrBadge')) + '</span>') : '') +
+        '</div>' +
+        '</div>' +
+        '</div>' +
+        '<div class="tabular" style="text-align:right;">' +
+        '<strong style="color:' + item.newTier.color + ';font-size:14px;">' + escapeHtml(tierName(item.newTier)) + '</strong>' +
+        '<div style="font-size:12px;color:#4ADE80;font-weight:800;">+' + String(item.ratingDelta) + ' pts</div>' +
+        '</div>' +
+        '</div>';
+    }
+
+    let musclePillsHtml = '';
+    for (let i = 0; i < cel.muscleUpgrades.length; i += 1) {
+      const mu = cel.muscleUpgrades[i];
+      const mObj = catalog.MUSCLE_BY_ID[mu.muscleId];
+      musclePillsHtml +=
+        '<span style="display:inline-flex;align-items:center;gap:5px;padding:5px 10px;border-radius:999px;background:#181C32;border:1px solid ' + mu.newTier.color + ';font-size:12px;font-weight:700;color:' + mu.newTier.color + ';">' +
+        escapeHtml(muscleName(mObj)) + ' → ' + escapeHtml(mu.newTier.nameEn) +
+        '</span>';
+    }
+
+    modalEl.innerHTML =
+      '<div class="modal-sheet" role="dialog" aria-modal="true" aria-label="Workout Ranked Summary">' +
+      '<div class="celebration-hero">' +
+      badges.renderRankHexBadge(cel.newOverallTier.id, 72) +
+      '<h2 class="section-title" style="font-size:21px;">' + escapeHtml(tr('workoutRankedTitle')) + '</h2>' +
+      '<div class="tabular" style="font-size:16px;font-weight:800;color:' + cel.newOverallTier.color + ';">' +
+      escapeHtml(tr('overallBodyrankLabel')) + ': ' + escapeHtml(tierName(cel.newOverallTier)) + ' • ' + String(cel.newOverallRating) + ' pts' +
+      '</div>' +
+      '<div class="tabular" style="font-size:13px;color:#BAE6FD;font-weight:700;">+' + String(cel.xpEarned) + ' XP (Lv.' + String(cel.newLevel) + ') • +' + String(cel.gemsEarned) + ' Gems • &#128293; ' + String(cel.streakDays) + 'd</div>' +
+      '</div>' +
+      '<h3 class="section-title" style="font-size:15.5px;">' + escapeHtml(tr('exerciseRanksEarned')) + '</h3>' +
+      '<div class="muscle-grid-list">' + exCardsHtml + '</div>' +
+      (musclePillsHtml
+        ? ('<h3 class="section-title" style="font-size:15px;">' + escapeHtml(tr('musclesUpgradedLabel')) + '</h3>' +
+           '<div style="display:flex;flex-wrap:wrap;gap:6px;">' + musclePillsHtml + '</div>')
+        : '') +
+      '<button type="button" id="btn-celebration-done" class="post-workout-btn" style="width:100%;min-height:48px;font-size:15.5px;" data-action="close-celebration">' +
+      escapeHtml(tr('awesomeContinue')) +
+      '</button>' +
+      '</div>';
+  }
+
+  function renderAll() {
+    const now = Date.now();
+    const snap = core.computeDerivedRankSnapshot(appState.profile, appState.workouts, now);
+    renderHeader(snap);
+
+    const viewHost = document.getElementById('app-view-host');
+    if (viewHost) {
+      let activeBanner = '';
+      if (appState.activeSession && ui.activeTab !== 'workout') {
+        activeBanner =
+          '<div style="padding:10px 14px 0;">' +
+          '<div class="active-workout-banner">' +
+          '<span style="font-size:13.5px;font-weight:700;">&#128170; ' + escapeHtml(tr('resumeWorkout')) + ' (' + String(appState.activeSession.entries.length) + ')</span>' +
+          '<button type="button" class="active-workout-banner-btn" data-action="go-tab" data-tab="workout">' + escapeHtml(tr('continueBtn')) + '</button>' +
+          '</div></div>';
+      }
+
+      let bodyHtml = '';
+      if (ui.activeTab === 'workout') bodyHtml = renderWorkoutTab(snap);
+      else if (ui.activeTab === 'ranks') bodyHtml = renderRanksTab(snap);
+      else if (ui.activeTab === 'nutrition') bodyHtml = renderNutritionTab();
+      else if (ui.activeTab === 'friends') bodyHtml = '<main class="main-content">' + renderFriendsLeaderboardInner(snap) + '</main>';
+      else if (ui.activeTab === 'profile') bodyHtml = renderProfileTab(snap);
+      else bodyHtml = renderHomeView(snap);
+
+      viewHost.innerHTML = activeBanner + bodyHtml;
+    }
+
+    renderBottomDock();
+    renderPickerModal(snap);
+    renderCelebrationModal();
+    renderToast();
+  }
+
+  // Surgical live update while typing weight/reps so iOS Safari numeric keyboard NEVER loses focus!
+  function handleLiveSetInput(target) {
+    const field = target.getAttribute('data-set-input');
+    const exId = target.getAttribute('data-ex');
+    const setId = target.getAttribute('data-set');
+    if (!field || !exId || !setId || !appState.activeSession) return;
+
+    const numVal = storage.parseDecimalInput(target.value);
+    if (!Number.isFinite(numVal) || numVal < 0) return;
+
+    const unit = appState.profile.unit;
+    const action = { type: 'UPDATE_SET', exerciseId: exId, setId: setId };
+    if (field === 'weight') {
+      action.weightKg = core.unitToKg(numVal, unit);
+    } else {
+      action.reps = Math.floor(numVal);
+    }
+
+    appState = core.reduceAppState(appState, action, Date.now()).state;
+    storage.saveState(appState);
+
+    // Update only the live rank pill & next-rank target banner in place
+    const ex = catalog.EXERCISE_BY_ID[exId];
+    let entryObj = null;
+    for (let i = 0; i < appState.activeSession.entries.length; i += 1) {
+      if (appState.activeSession.entries[i].exerciseId === exId) {
+        entryObj = appState.activeSession.entries[i];
+        break;
+      }
+    }
+    if (!entryObj || !ex) return;
+
+    let setObj = null;
+    let bestRating = 0;
+    let refReps = 8;
+    const snap = core.computeDerivedRankSnapshot(appState.profile, appState.workouts, Date.now());
+    if (snap.exerciseStats[exId]) bestRating = snap.exerciseStats[exId].bestRating;
+
+    for (let i = 0; i < entryObj.sets.length; i += 1) {
+      const s = entryObj.sets[i];
+      if (s.id === setId) setObj = s;
+      if (s.reps >= 1) refReps = s.reps;
+      const ev = core.evaluateSetStrength(s, ex, appState.profile.bodyweightKg, appState.profile.sex);
+      if (ev.valid && ev.rating > bestRating) bestRating = ev.rating;
+    }
+
+    const pillEl = document.getElementById('rank-pill-' + setId);
+    if (pillEl && setObj) {
+      pillEl.innerHTML = renderSetRankBadgeInner(setObj, ex);
+    }
+    const bannerEl = document.getElementById('next-banner-' + exId);
+    if (bannerEl) {
+      bannerEl.innerHTML = buildNextRankHintHtml(ex, bestRating, refReps, appState.profile.bodyweightKg, appState.profile.sex, unit);
+    }
+  }
+
+  function bindGlobalEvents() {
+    document.addEventListener('click', function (ev) {
+      // Check interactive SVG muscle region click first
+      const musclePath = ev.target.closest ? ev.target.closest('.muscle-region') : null;
+      if (musclePath) {
+        const mId = musclePath.getAttribute('data-muscle');
+        if (mId) {
+          ui.selectedMuscleId = mId;
+          renderAll();
+          return;
+        }
+      }
+
+      const btn = ev.target.closest ? ev.target.closest('[data-action]') : null;
+      if (!btn) return;
+      const act = btn.getAttribute('data-action');
+
+      switch (act) {
+        case 'toggle-lang':
+          dispatch({ type: 'SET_LANG', lang: appState.lang === 'vi' ? 'en' : 'vi' });
+          break;
+
+        case 'toggle-sound':
+          dispatch({ type: 'TOGGLE_SOUND' });
+          break;
+
+        case 'go-tab': {
+          const targetTab = btn.getAttribute('data-tab') || 'home';
+          ui.activeTab = targetTab;
+          renderAll();
+          window.scrollTo(0, 0);
+          break;
+        }
+
+        case 'set-home-subtab':
+          ui.homeSubtab = btn.getAttribute('data-subtab') || 'foryou';
+          renderAll();
+          break;
+
+        case 'open-picker':
+          ui.pickerAddingToActive = false;
+          ui.pickerOpen = true;
+          renderAll();
+          break;
+
+        case 'open-picker-add':
+          ui.pickerAddingToActive = true;
+          ui.pickerSelectedIds = [];
+          ui.pickerOpen = true;
+          renderAll();
+          break;
+
+        case 'close-picker':
+          ui.pickerOpen = false;
+          renderAll();
+          break;
+
+        case 'picker-cat':
+          ui.pickerCategory = btn.getAttribute('data-cat') || 'all';
+          renderPickerModal(core.computeDerivedRankSnapshot(appState.profile, appState.workouts, Date.now()));
+          break;
+
+        case 'toggle-pick-ex': {
+          const exId = btn.getAttribute('data-ex');
+          const idx = ui.pickerSelectedIds.indexOf(exId);
+          if (idx === -1) ui.pickerSelectedIds.push(exId);
+          else ui.pickerSelectedIds.splice(idx, 1);
+          renderPickerModal(core.computeDerivedRankSnapshot(appState.profile, appState.workouts, Date.now()));
+          break;
+        }
+
+        case 'confirm-picker': {
+          if (ui.pickerSelectedIds.length === 0) {
+            ui.pickerSelectedIds = ['bench_press'];
+          }
+          ui.pickerOpen = false;
+          if (ui.pickerAddingToActive && appState.activeSession) {
+            dispatch({ type: 'ADD_EXERCISES_TO_SESSION', exerciseIds: ui.pickerSelectedIds.slice() });
+          } else {
+            ui.activeTab = 'workout';
+            dispatch({ type: 'START_WORKOUT', exerciseIds: ui.pickerSelectedIds.slice() });
+          }
+          break;
+        }
+
+        case 'start-preset': {
+          const pId = btn.getAttribute('data-preset');
+          const preset = catalog.WORKOUT_PRESETS.find(function (p) { return p.id === pId; });
+          if (preset) {
+            ui.activeTab = 'workout';
+            dispatch({
+              type: 'START_WORKOUT',
+              title: appState.lang === 'vi' ? preset.nameVi : preset.nameEn,
+              exerciseIds: preset.exerciseIds
+            });
+          }
+          break;
+        }
+
+        case 'toggle-unit': {
+          const nextUnit = appState.profile.unit === 'kg' ? 'lbs' : 'kg';
+          dispatch({ type: 'UPDATE_PROFILE', unit: nextUnit });
+          break;
+        }
+
+        case 'cycle-set-type': {
+          const exId = btn.getAttribute('data-ex');
+          const setId = btn.getAttribute('data-set');
+          if (!appState.activeSession) break;
+          const entry = appState.activeSession.entries.find(function (e) { return e.exerciseId === exId; });
+          const s = entry && entry.sets.find(function (x) { return x.id === setId; });
+          if (s) {
+            const order = ['working', 'warmup', 'dropset'];
+            const nextType = order[(order.indexOf(s.setType || 'working') + 1) % order.length];
+            dispatch({ type: 'UPDATE_SET', exerciseId: exId, setId: setId, setType: nextType });
+          }
+          break;
+        }
+
+        case 'toggle-set-done': {
+          const exId = btn.getAttribute('data-ex');
+          const setId = btn.getAttribute('data-set');
+          if (!appState.activeSession) break;
+          const entry = appState.activeSession.entries.find(function (e) { return e.exerciseId === exId; });
+          const s = entry && entry.sets.find(function (x) { return x.id === setId; });
+          if (s) {
+            const nextDone = !s.completed;
+            if (nextDone) {
+              sound.playSetCheck(appState.soundEnabled);
+              ui.restEndAtMs = Date.now() + appState.profile.restTimerSec * 1000;
+            }
+            dispatch({ type: 'UPDATE_SET', exerciseId: exId, setId: setId, completed: nextDone });
+          }
+          break;
+        }
+
+        case 'add-set':
+          dispatch({ type: 'ADD_SET', exerciseId: btn.getAttribute('data-ex') });
+          break;
+
+        case 'delete-last-set': {
+          const exId = btn.getAttribute('data-ex');
+          if (!appState.activeSession) break;
+          const entry = appState.activeSession.entries.find(function (e) { return e.exerciseId === exId; });
+          if (entry && entry.sets.length > 1) {
+            const lastSet = entry.sets[entry.sets.length - 1];
+            dispatch({ type: 'DELETE_SET', exerciseId: exId, setId: lastSet.id });
+          }
+          break;
+        }
+
+        case 'remove-ex-session':
+          dispatch({ type: 'REMOVE_EXERCISE_FROM_SESSION', exerciseId: btn.getAttribute('data-ex') });
+          break;
+
+        case 'start-or-skip-rest':
+          if (ui.restEndAtMs > Date.now()) {
+            ui.restEndAtMs = 0;
+          } else {
+            ui.restEndAtMs = Date.now() + appState.profile.restTimerSec * 1000;
+          }
+          syncTicker();
+          renderAll();
+          break;
+
+        case 'post-workout':
+          dispatch({ type: 'POST_WORKOUT' });
+          break;
+
+        case 'cancel-workout':
+          ui.restEndAtMs = 0;
+          dispatch({ type: 'CANCEL_WORKOUT' });
+          break;
+
+        case 'close-celebration':
+          ui.celebrationData = null;
+          ui.activeTab = 'ranks';
+          renderAll();
+          window.scrollTo(0, 0);
+          break;
+
+        case 'set-bodygraph-view':
+          ui.ranksViewMode = btn.getAttribute('data-view') === 'back' ? 'back' : 'front';
+          renderAll();
+          break;
+
+        case 'select-muscle':
+          ui.selectedMuscleId = btn.getAttribute('data-muscle') || 'lower_chest';
+          ui.ranksViewMode = btn.getAttribute('data-view') === 'back' ? 'back' : 'front';
+          renderAll();
+          break;
+
+        case 'train-muscle': {
+          const grp = btn.getAttribute('data-group') || 'all';
+          ui.pickerCategory = grp;
+          const matching = catalog.EXERCISES
+            .filter(function (ex) { return ex.primaryMuscles.indexOf(ui.selectedMuscleId) !== -1; })
+            .slice(0, 2)
+            .map(function (ex) { return ex.id; });
+          if (matching.length > 0) ui.pickerSelectedIds = matching;
+          ui.pickerAddingToActive = Boolean(appState.activeSession);
+          ui.pickerOpen = true;
+          renderAll();
+          break;
+        }
+
+        case 'run-calc': {
+          const selEl = document.getElementById('calc-ex-select');
+          const wEl = document.getElementById('calc-weight-input');
+          const rEl = document.getElementById('calc-reps-input');
+          if (selEl) ui.calcExerciseId = selEl.value;
+          if (wEl) ui.calcWeightText = wEl.value;
+          if (rEl) ui.calcRepsText = rEl.value;
+          renderAll();
+          break;
+        }
+
+        case 'quick-meal':
+          dispatch({
+            type: 'ADD_MEAL',
+            name: btn.getAttribute('data-name'),
+            kcal: Number(btn.getAttribute('data-kcal')),
+            proteinG: Number(btn.getAttribute('data-pro'))
+          });
+          break;
+
+        case 'delete-meal':
+          dispatch({ type: 'DELETE_MEAL', mealId: btn.getAttribute('data-meal') });
+          break;
+
+        case 'set-sex':
+          dispatch({ type: 'UPDATE_PROFILE', sex: btn.getAttribute('data-sex') });
+          break;
+
+        case 'save-profile': {
+          const bwInput = document.getElementById('prof-bw-input');
+          const restInput = document.getElementById('prof-rest-input');
+          const bwVal = bwInput ? storage.parseDecimalInput(bwInput.value) : NaN;
+          const restVal = restInput ? storage.parseDecimalInput(restInput.value) : NaN;
+          dispatch({
+            type: 'UPDATE_PROFILE',
+            bodyweightKg: Number.isFinite(bwVal) ? core.unitToKg(bwVal, appState.profile.unit) : appState.profile.bodyweightKg,
+            restTimerSec: Number.isFinite(restVal) ? restVal : appState.profile.restTimerSec
+          });
+          showToast(appState.lang === 'vi' ? 'Đã cập nhật chuẩn cân nặng!' : 'Bodyweight standard saved!');
+          break;
+        }
+
+        case 'delete-workout':
+          dispatch({ type: 'DELETE_WORKOUT', workoutId: btn.getAttribute('data-wk') });
+          break;
+
+        case 'load-demo':
+          dispatch({ type: 'LOAD_DEMO_DATA' });
+          showToast(appState.lang === 'vi' ? 'Đã nạp dữ liệu mẫu lên Rank!' : 'Loaded sample ranked workouts!');
+          break;
+
+        case 'reset-all':
+          dispatch({ type: 'RESET_ALL' });
+          break;
+
+        case 'export-json': {
+          const blob = new Blob([JSON.stringify(appState, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'liftoff-ranks-backup.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          break;
+        }
+
+        default:
+          break;
+      }
+    });
+
+    document.addEventListener('input', function (ev) {
+      const t = ev.target;
+      if (!t || !t.getAttribute) return;
+
+      if (t.getAttribute('data-set-input')) {
+        handleLiveSetInput(t);
+        return;
+      }
+
+      if (t.id === 'logger-bw-input') {
+        const v = storage.parseDecimalInput(t.value);
+        if (Number.isFinite(v) && v >= 25 && v <= 550) {
+          appState = core.reduceAppState(
+            appState,
+            { type: 'UPDATE_PROFILE', bodyweightKg: core.unitToKg(v, appState.profile.unit) },
+            Date.now()
+          ).state;
+          storage.saveState(appState);
+        }
+        return;
+      }
+
+      if (t.id === 'picker-search-input') {
+        ui.pickerSearch = t.value;
+        const pos = t.selectionStart;
+        renderPickerModal(core.computeDerivedRankSnapshot(appState.profile, appState.workouts, Date.now()));
+        const nextInput = document.getElementById('picker-search-input');
+        if (nextInput) {
+          nextInput.focus();
+          try {
+            nextInput.setSelectionRange(pos, pos);
+          } catch (_e) {}
+        }
+        return;
+      }
+
+      if (t.id === 'calc-weight-input') ui.calcWeightText = t.value;
+      if (t.id === 'calc-reps-input') ui.calcRepsText = t.value;
+    });
+
+    document.addEventListener('change', function (ev) {
+      const t = ev.target;
+      if (t && t.id === 'calc-ex-select') {
+        ui.calcExerciseId = t.value;
+        renderAll();
+      }
+    });
+
+    document.addEventListener('visibilitychange', function () {
+      syncTicker();
+    });
+  }
+
+  bindGlobalEvents();
+  renderAll();
+  syncTicker();
+})();
+
+  </script>
+</body>
+</html>
